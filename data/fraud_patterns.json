@@ -1,0 +1,75 @@
+{
+  "fraud_types": {
+    "upcoding": {
+      "description": "Billing for more expensive services than provided",
+      "detection_approach": "supervised_classification",
+      "indicators": [
+        "claim_amount significantly above provider mean",
+        "high-complexity codes with low-complexity diagnoses",
+        "systematic shift to higher-paying procedure codes"
+      ],
+      "prevalence": "most_common",
+      "source": "Bahudhoddi (2025), RQ1"
+    },
+    "phantom_billing": {
+      "description": "Billing for services never rendered",
+      "detection_approach": "anomaly_detection",
+      "indicators": [
+        "claims outside operating hours",
+        "impossible service volumes per provider per day",
+        "no corresponding patient visit records"
+      ],
+      "prevalence": "common",
+      "source": "Bahudhoddi (2025), RQ1"
+    },
+    "duplicate_claims": {
+      "description": "Submitting the same claim multiple times",
+      "detection_approach": "rule_based_ml_hybrid",
+      "indicators": [
+        "identical claim fields within time window",
+        "same patient-provider-procedure combination",
+        "near-identical amounts with slight variations"
+      ],
+      "prevalence": "common",
+      "source": "Bahudhoddi (2025), RQ1"
+    },
+    "unbundling": {
+      "description": "Separately billing bundled services for higher reimbursement",
+      "detection_approach": "pattern_analysis",
+      "indicators": [
+        "multiple related procedures billed separately on same day",
+        "component codes billed instead of comprehensive code",
+        "unusually high number of line items per encounter"
+      ],
+      "prevalence": "moderate",
+      "source": "Bahudhoddi (2025), RQ1"
+    },
+    "identity_theft": {
+      "description": "Using stolen patient identities for fraudulent claims",
+      "detection_approach": "behavioral_profiling",
+      "indicators": [
+        "geographically impossible claim patterns",
+        "sudden change in claim frequency or types",
+        "demographically inconsistent procedures"
+      ],
+      "prevalence": "moderate",
+      "source": "Bahudhoddi (2025), RQ1"
+    },
+    "kickbacks": {
+      "description": "Illegal referral arrangements between providers",
+      "detection_approach": "network_analysis",
+      "indicators": [
+        "abnormal referral concentration between specific providers",
+        "referral patterns inconsistent with geographic proximity",
+        "sudden shifts in referral patterns"
+      ],
+      "prevalence": "less_common",
+      "source": "Bahudhoddi (2025), RQ1"
+    }
+  },
+  "theoretical_framework": {
+    "TAM": "Davis (1989) - Perceived usefulness and ease of use drive adoption",
+    "Fraud_Triangle": "Cressey (1954) - Pressure, opportunity, rationalization",
+    "DOI": "Rogers (2003) - Innovation adoption across organizations"
+  }
+}
