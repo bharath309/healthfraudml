@@ -9,7 +9,11 @@ build/
 
 # Virtual environments
 venv/
+.venv/
 .env/
+
+# Local tooling
+.claude/
 
 # IDE
 .vscode/
@@ -25,6 +29,12 @@ data/*.csv
 !data/sample_claims.csv
 data/*.xlsx
 data/*.parquet
+data/chroma_db/
+data/kaggle/
+results/*.csv
+
+# Logs
+*.log
 
 # Jupyter
 .ipynb_checkpoints/

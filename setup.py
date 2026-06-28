@@ -13,7 +13,7 @@ setup(
     description="A comprehensive ML framework for detecting financial fraud in healthcare claims",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/bharathkb-research/healthfraudml",
+    url="https://github.com/bharath309/healthfraudml",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",

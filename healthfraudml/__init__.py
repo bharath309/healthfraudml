@@ -13,5 +13,6 @@ __version__ = "0.1.0"
 __author__ = "Bharath Kumar Bahudhoddi"
 
 from healthfraudml.detector import FraudDetector
+from healthfraudml.auditor import BillingAuditor, LLMBillParser, CPTDatabase, RAGBillAuditor
 
-__all__ = ["FraudDetector"]
+__all__ = ["FraudDetector", "BillingAuditor", "LLMBillParser", "CPTDatabase", "RAGBillAuditor"]
