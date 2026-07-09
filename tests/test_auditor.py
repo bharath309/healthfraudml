@@ -16,10 +16,10 @@ def sample_bill_items():
 
 
 def test_billing_auditor_upcoding(sample_bill_items):
-    auditor = BillingAuditor(provider_name="Sutter Health")
+    auditor = BillingAuditor(provider_name="Example Health System")
     report = auditor.audit_bill(sample_bill_items)
 
-    assert report["provider_name"] == "Sutter Health"
+    assert report["provider_name"] == "Example Health System"
     assert report["total_billed"] == 7381.00
     assert report["risk_level"] == "High"
     
@@ -36,7 +36,7 @@ def test_billing_auditor_overpricing_only():
     items = [
         {"cpt_code": "99214", "amount": 900.00, "description": "Office Visit"}
     ]
-    auditor = BillingAuditor(provider_name="Sutter Health")
+    auditor = BillingAuditor(provider_name="Example Health System")
     report = auditor.audit_bill(items)
 
     assert report["risk_level"] == "Medium"  # Overpricing only
@@ -63,13 +63,13 @@ def test_billing_auditor_clear():
 def test_llm_bill_parser_regex_fallback():
     parser = LLMBillParser(api_key=None)  # Force fallback
     text = """
-    Bill from UC Health hospital:
+    Bill from Example Health System hospital:
     Urgent Care visit Level 4 (99284): $1,500.00
     Minor stitches (12001): $450.00
     """
     data = parser.parse_bill_text(text)
     
-    assert "UC Health" in data["provider_name"]
+    assert "Example Health System" in data["provider_name"]
     assert len(data["items"]) == 2
     
     cpts = [item["cpt_code"] for item in data["items"]]
@@ -89,7 +89,7 @@ def test_llm_bill_parser_pdf_extraction(tmp_path):
         b"3 0 obj <</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>> endobj\n"
         b"4 0 obj <</Type/Font/Subtype/Type1/BaseFont/Helvetica>> endobj\n"
         b"5 0 obj <</Length 120>> stream\n"
-        b"BT /F1 12 Tf 72 712 Td (Sutter Health Hospital Bill Details:) Tj\n"
+        b"BT /F1 12 Tf 72 712 Td (Example Health System Hospital Bill Details:) Tj\n"
         b"0 -20 Td (ED Proc Minor CPT 56420: $709.00) Tj\n"
         b"0 -20 Td (ED Proc Level 5 W/Proc - 99285: $6672.00) Tj ET\n"
         b"endstream\nendobj\n"
@@ -104,6 +104,6 @@ def test_llm_bill_parser_pdf_extraction(tmp_path):
     parser = LLMBillParser()
     extracted_text = parser.extract_text_from_pdf(str(pdf_file))
     
-    assert "Sutter Health" in extracted_text
+    assert "Example Health System" in extracted_text
     assert "56420" in extracted_text
     assert "99285" in extracted_text

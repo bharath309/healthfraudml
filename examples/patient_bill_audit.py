@@ -18,7 +18,7 @@ def create_dummy_pdf(filename: str):
         b"3 0 obj <</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>> endobj\n"
         b"4 0 obj <</Type/Font/Subtype/Type1/BaseFont/Helvetica>> endobj\n"
         b"5 0 obj <</Length 120>> stream\n"
-        b"BT /F1 12 Tf 72 712 Td (Sutter Health Hospital Bill Details:) Tj\n"
+        b"BT /F1 12 Tf 72 712 Td (Example Health System Hospital Bill Details:) Tj\n"
         b"0 -20 Td (ED Proc Minor CPT 56420: $709.00) Tj\n"
         b"0 -20 Td (ED Proc Level 5 W/Proc - 99285: $6672.00) Tj ET\n"
         b"endstream\nendobj\n"
@@ -33,9 +33,9 @@ def create_dummy_pdf(filename: str):
 def main():
     # 1. Unstructured Email Text Example
     email_text = """
-    From: billing@sutterhealth.org
+    From: billing@examplehealth.org
     To: patient@example.com
-    Subject: Your Sutter Health Medical Bill #12345
+    Subject: Your Example Health System Medical Bill #12345
     
     Dear Patient,
     Here is a summary of the services provided during your Emergency Department

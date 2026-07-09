@@ -58,7 +58,7 @@ def main():
     ]
 
     # Audit using the database
-    auditor = BillingAuditor(provider_name="Sutter Health", db=db)
+    auditor = BillingAuditor(provider_name="Example Health System", db=db)
     report = auditor.audit_bill(bill_items)
 
     print(f"Provider: {report['provider_name']}")
@@ -84,7 +84,7 @@ def main():
         print("fall back to rule-based CPT auditing. Set GEMINI_API_KEY to test LLM RAG audit.")
         print()
     
-    rag_report = rag_auditor.audit_bill(bill_items, provider_name="Sutter Health")
+    rag_report = rag_auditor.audit_bill(bill_items, provider_name="Example Health System")
     
     print(f"Provider: {rag_report['provider_name']}")
     print(f"Risk Level: {rag_report['risk_level']}")

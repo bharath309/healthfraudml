@@ -92,7 +92,7 @@ Bill Text:
 
 Return your response strictly as a JSON object with the following schema:
 {{
-  "provider_name": "string (the hospital or clinic name, e.g. 'Sutter Health')",
+  "provider_name": "string (the hospital or clinic name, e.g. 'Example Health System')",
   "items": [
     {{
       "cpt_code": "string (the 5-digit CPT code if found, e.g., '99285', '56420'. If not explicit, map standard codes like Level 5 ER -> '99285', minor I&D -> '56420')",
@@ -126,11 +126,7 @@ Return your response strictly as a JSON object with the following schema:
 
         # Attempt to find provider name
         provider_matches = [
-            r"(?i)sutter\s+health",
-            r"(?i)uc\s+health",
-            r"(?i)kaiser\s+permanente",
-            r"(?i)memorial\s+hospital",
-            r"(?i)community\s+clinic",
+            r"[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*\s+(?:Health\s+System|Health|Hospital|Medical\s+Center|Clinic)",
         ]
         for pat in provider_matches:
             match = re.search(pat, text)

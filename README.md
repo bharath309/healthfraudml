@@ -18,7 +18,7 @@
 from healthfraudml import BillingAuditor
 
 # Audit a patient bill for upcoding, unbundling, and price gouging
-auditor = BillingAuditor(provider_name="Sutter Health")
+auditor = BillingAuditor(provider_name="Example Health System")
 report = auditor.audit_bill([
     {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
     {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
@@ -105,7 +105,7 @@ rag = RAGBillAuditor(db=db)
 report = rag.audit_bill([
     {"cpt_code": "99285", "amount": 6500.00, "description": "ED Level 5"},
     {"cpt_code": "",      "amount": 900.00,  "description": "Bartholin cyst drainage"},
-], provider_name="Sutter Health")
+], provider_name="Example Health System")
 
 # Semantic search resolves "Bartholin cyst drainage" → CPT 56420 automatically
 print(f"Savings: ${report['suggested_savings']:.2f}")
