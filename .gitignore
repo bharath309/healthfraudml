@@ -12,8 +12,8 @@ venv/
 .venv/
 .env/
 
-# Local tooling
-.claude/
+# Local tooling (shared agents/commands in .claude/ are committed)
+.claude/settings.local.json
 
 # IDE
 .vscode/
