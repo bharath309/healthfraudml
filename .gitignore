@@ -36,6 +36,11 @@ results/*.csv
 # Logs
 *.log
 
+# Secrets
+.token
+**/.token
+linkedin-mcp/.token
+
 # Jupyter
 .ipynb_checkpoints/
 
