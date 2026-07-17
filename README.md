@@ -95,6 +95,9 @@ for case in results.flagged:
 
 ## Quick Start — Patient Billing Audit with RAG
 
+> **Note:** the RAG and LLM features need extra dependencies. Install them with
+> `pip install "healthfraudml[rag]"` (adds ChromaDB, Google GenAI, and pypdf).
+
 ```python
 from healthfraudml import CPTDatabase, RAGBillAuditor
 

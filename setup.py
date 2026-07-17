@@ -40,6 +40,7 @@ setup(
     extras_require={
         "deep": ["tensorflow>=2.8.0", "torch>=1.10.0"],
         "explain": ["shap>=0.40.0", "lime>=0.2.0"],
+        "rag": ["chromadb>=0.4.0", "google-genai>=0.1.0", "pypdf>=3.0.0"],
         "dev": ["pytest>=7.0.0", "pytest-cov>=3.0.0", "flake8>=4.0.0"],
     },
 )
