@@ -9,7 +9,7 @@ Author: Bharath Kumar Bahudhoddi, Ph.D.
 Based on doctoral research at the University of the Cumberlands.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Bharath Kumar Bahudhoddi"
 
 from healthfraudml.detector import FraudDetector

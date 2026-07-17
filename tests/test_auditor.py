@@ -22,14 +22,48 @@ def test_billing_auditor_upcoding(sample_bill_items):
     assert report["provider_name"] == "Example Health System"
     assert report["total_billed"] == 7381.00
     assert report["risk_level"] == "High"
-    
+
     # Savings should be 6672.0 - 1200.0 (fair_max for CPT 99283) = 5472.0
     assert report["suggested_savings"] == 5472.0
-    
+
     findings_types = [f["type"] for f in report["findings"]]
     assert "Upcoding" in findings_types
     assert "Unbundling" in findings_types
     assert report["dispute_letter"] != ""
+
+
+def test_expanded_cms_benchmark_loaded():
+    """The CMS PFS benchmark should extend coverage well beyond the built-ins."""
+    ref = BillingAuditor.CPT_REFERENCE
+    # Far more than the 10 curated built-ins.
+    assert len(ref) > 1000
+    # A common expanded code (CT head) is present and price-only (no severity).
+    assert "70450" in ref
+    assert "severity" not in ref["70450"]
+    assert ref["70450"]["fair_max"] > ref["70450"]["medicare_max"]
+    # Built-ins retain their curated metadata.
+    assert ref["99285"]["severity"] == 5
+
+
+def test_expanded_benchmark_flags_overpricing_without_severity():
+    """A price-only expanded code overpriced -> Overpricing flag, no crash, no upcoding."""
+    auditor = BillingAuditor(provider_name="Imaging Center")
+    report = auditor.audit_bill([
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head without contrast"},
+    ])
+    types = [f["type"] for f in report["findings"]]
+    assert "Overpricing" in types
+    assert "Upcoding" not in types  # no severity metadata -> never accused of upcoding
+    assert report["audited_items"][0]["status"] == "Overpriced"
+
+
+def test_unknown_code_bypasses_benchmark_not_dropped():
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "0000X", "amount": 500.00, "description": "Unlisted proprietary"},
+    ])
+    assert len(report["audited_items"]) == 1
+    assert "bypassed price benchmarking" in report["audited_items"][0]["notes"]
 
 
 def test_billing_auditor_overpricing_only():

@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="healthfraudml",
-    version="0.1.0",
+    version="0.2.0",
     author="Bharath Kumar Bahudhoddi",
     author_email="bharath.p90@gmail.com",
     description="A comprehensive ML framework for detecting financial fraud in healthcare claims",
@@ -15,6 +15,8 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/bharath309/healthfraudml",
     packages=find_packages(),
+    include_package_data=True,
+    package_data={"healthfraudml.auditor": ["data/*.csv"]},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Healthcare Industry",

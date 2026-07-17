@@ -17,13 +17,16 @@ Input CSV format (header row required):
     99214,350.00,Office Visit Established Level 4
 
 Notes for pilot evaluators:
-  * v0.1.0 ships with price benchmarks for 10 common CPT codes (ED E/M levels
-    99281-99285, office visits 99214/99215, wound repairs 12001/12002, 56420).
-    Lines with other codes are still checked for structural issues (upcoding
-    patterns, unbundling) but skip price benchmarking and are marked as such
-    in the output — they are never silently dropped.
-  * Expanded benchmark coverage (CMS Physician Fee Schedule) is on the
-    roadmap for pilot partners — tell us which code families you need.
+  * v0.2.0 ships price benchmarks for ~7,300 CPT/HCPCS codes derived from the
+    CMS Physician Fee Schedule (2025 national payment amounts). A curated set
+    of common codes (ED E/M 99281-99285, office visits 99214/99215, wound
+    repairs 12001/12002, 56420) additionally carries severity metadata used for
+    upcoding detection.
+  * Lines with codes outside the benchmark are still checked for structural
+    issues (unbundling) but skip price benchmarking and are marked as such in
+    the output — they are never silently dropped.
+  * The benchmark holds code numbers + CMS payment ranges only (no procedure
+    descriptions); the report uses your CSV's own `description` column.
 """
 
 import argparse
