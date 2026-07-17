@@ -29,9 +29,14 @@ pip install scikit-learn imbalanced-learn shap
 python experiments/run_comparison.py
 ```
 
-## What's Next (v0.2.0)
+## Roadmap (aspirational — subject to change)
 
-- RAG-powered billing audit with retrieval from CMS/OIG guidelines
+> **Update (Jul 2026):** v0.2.0 has since shipped; it delivered the CMS PFS price-benchmark
+> expansion (7,359 codes), the `[rag]` install extra, and the pilot quickstart — see
+> [CHANGELOG.md](CHANGELOG.md). The items below remain future candidates, not commitments:
+
+- Retrieval over CMS/OIG guideline documents in the RAG auditor (the RAG module itself
+  already exists; today it retrieves CPT pricing rules)
 - Real-time streaming fraud detection pipeline
 - Pre-trained model weights
 - Interactive dashboard for audit results
