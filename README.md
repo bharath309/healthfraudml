@@ -59,6 +59,27 @@ print(report['dispute_letter'])                         # Ready-to-send dispute 
 
 ## Installation
 
+### One-click setup (no command line)
+
+For non-technical users auditing bills, grab the file for your OS from
+[`install/`](install/) and double-click it:
+
+| OS | File |
+|---|---|
+| macOS / Linux | [`setup_billaudit.command`](install/setup_billaudit.command) |
+| Windows | [`setup_billaudit.bat`](install/setup_billaudit.bat) |
+
+It installs Python if needed, installs the package, creates a `~/BillAudit`
+folder with a runner script and a sample bill, then runs a verification audit so
+you can see it working. Takes about two minutes.
+
+Afterwards: drop any bill CSV into `~/BillAudit` and double-click `run_audit`
+to get a `<name>_report.md` for each one.
+
+> The Windows script has not yet been verified on a physical Windows machine.
+
+### Manual install (pip)
+
 ```bash
 pip install healthfraudml
 ```

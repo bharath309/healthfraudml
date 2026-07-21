@@ -4,7 +4,7 @@ All notable changes to HealthFraudML will be documented in this file.
 
 ## [0.3.0] - 2026-07-21
 
-Driven by pilot-partner feedback from a working billing advocate: results need
+Driven by practitioner feedback from a working billing advocate: results need
 readable code names, and price checking alone doesn't answer "is the code right
 for this service?"
 
