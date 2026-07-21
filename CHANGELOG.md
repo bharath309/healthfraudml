@@ -36,6 +36,17 @@ for this service?"
   legally owed.
 
 ### Fixed
+- **The dispute letter no longer alleges issues a bill does not have.** Coding-rule
+  paragraphs and the requests that follow were hardcoded, so a bill with only an
+  overpricing finding still received text about E/M bundling and a specific visit
+  code that appeared nowhere on it. Both sections are now built from the findings
+  actually raised, and the finding count is stated accurately.
+- **Removed the regulatory-compliance assertion from the letter.** The template
+  stated that a billing pattern "does not comply with National Correct Coding
+  Initiative (NCCI) guidelines" — a regulatory claim, emitted unconditionally and
+  without review. It is replaced with a hedged, factual observation about what the
+  bill documents. Any regulatory or statutory citation is gated behind counsel
+  review and ships separately; a test asserts none appear in generated letters.
 - **Unbundling false positive**: an E/M line plus *any* other line used to flag
   potential unbundling, including diagnostics (e.g. `99213` + chest X-ray).
   Unbundling now fires only when the companion line is a curated procedure code

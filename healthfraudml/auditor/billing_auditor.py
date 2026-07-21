@@ -470,6 +470,60 @@ class BillingAuditor:
             if medicare_lines else ""
         )
 
+        # Only assert what this bill actually shows. Paragraphs about coding
+        # rules and the requests that follow are built from the findings that
+        # were genuinely raised — a letter must never allege an issue that is
+        # not present, both because it is untrue and because it hands the
+        # billing department an easy dismissal.
+        finding_types = {f["type"] for f in findings}
+        upcoded_codes = sorted({
+            item["cpt_code"] for item in audited_items
+            if item["status"] == "Potential Upcoding"
+        })
+
+        rules = []
+        if "Unbundling" in finding_types:
+            rules.append(
+                "Evaluation and Management (E/M) services are generally bundled "
+                "into the procedure charge when performed on the same day."
+            )
+        if "Upcoding" in finding_types:
+            codes = ", ".join(f"CPT {c}" for c in upcoded_codes) or "the billed visit code"
+            rules.append(
+                "Visit levels must match the clinical severity of the condition. "
+                f"The level billed on {codes} does not appear to be supported by "
+                "the procedures documented on this bill."
+            )
+        rules_block = ""
+        if rules:
+            rules_block = "Under standard medical coding rules:\n" + "".join(
+                f"{i}. {r}\n" for i, r in enumerate(rules, 1)
+            ) + "\n"
+
+        requests = []
+        if "Upcoding" in finding_types:
+            requests.append(
+                "A formal coding audit of my chart and physician notes to confirm "
+                "the visit level billed."
+            )
+        if "Unbundling" in finding_types:
+            requests.append("Review of same-day charges that may be bundled.")
+        if "Overpricing" in finding_types:
+            requests.append(
+                "Review of charges that sit far above the published Medicare "
+                "national rate for the same service, as itemized above."
+            )
+        if not requests:
+            requests.append("An itemized review of the charges identified above.")
+        requests_block = "".join(f"- {r}\n" for r in requests)
+
+        count = len(findings)
+        discrepancy_phrase = (
+            "one item was identified that warrants review"
+            if count == 1 else
+            f"{count} items were identified that warrant review"
+        )
+
         letter = f"""Subject: Formal Billing Dispute & Audit Request - Urgent
 
 To: {self.provider_name} Billing Department / Patients Accounts
@@ -480,22 +534,14 @@ Dear {self.provider_name} Billing Representative,
 
 I am writing to formally dispute the charges on my recent bill of ${total_billed:.2f} from your facility, {self.provider_name}. 
 
-Following a review of the billed itemized CPT codes using healthcare billing standards, several critical discrepancies have been identified indicating potential billing errors, upcoding, and unbundled charges:
+Following a review of the billed itemized CPT codes against published Medicare payment data and standard coding conventions, {discrepancy_phrase}:
 
 Summary of Audit Findings:
 {findings_bullets}
 Itemized Bill Breakdown:
 {bill_table}
-{medicare_block}Under standard medical coding rules:
-1. Evaluation and Management (E/M) services are generally bundled into the procedure charge when performed on the same day. 
-2. Visit levels must match the clinical severity of the condition. Billing a Level 5 visit (CPT 99285) for minor outpatient procedures is considered upcoding and does not comply with National Correct Coding Initiative (NCCI) guidelines.
-
-Based on these findings, I request:
-- A formal coding audit of my chart and physician notes to adjust the E/M codes to the correct level of care.
-- Correction or removal of duplicate/unbundled same-day fees.
-- Review of charges that sit far above the published Medicare national rate for
-  the same service, as itemized above.
-
+{medicare_block}{rules_block}Based on these findings, I request:
+{requests_block}
 I request that this account be placed on "Dispute Status" and all collection actions suspended while this audit is performed. I look forward to receiving a revised, corrected statement.
 
 Sincerely,

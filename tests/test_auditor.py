@@ -84,6 +84,43 @@ def test_unbundling_preserved_for_curated_procedure():
     assert report["suggested_savings"] == 5472.0
 
 
+def test_letter_asserts_only_present_findings():
+    """A bill with only an overpricing issue must not allege coding violations."""
+    auditor = BillingAuditor(provider_name="Imaging Center")
+    report = auditor.audit_bill([
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])
+    letter = report["dispute_letter"]
+    assert "Overpricing" in [f["type"] for f in report["findings"]]
+    # No E/M, upcoding or unbundling language on a single imaging line.
+    for phrase in ["99285", "upcoding", "Evaluation and Management", "bundled"]:
+        assert phrase not in letter, f"letter should not mention {phrase!r}"
+    assert "one item was identified" in letter
+
+
+def test_letter_includes_rules_when_findings_present():
+    """Coding-rule paragraphs appear only when the matching finding was raised."""
+    auditor = BillingAuditor(provider_name="Example Hospital")
+    letter = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])["dispute_letter"]
+    assert "Evaluation and Management" in letter
+    assert "CPT 99285" in letter
+
+
+def test_letter_makes_no_regulatory_compliance_claim():
+    """No statutory/regulatory assertions ship without the counsel-review gate."""
+    auditor = BillingAuditor(provider_name="Example Hospital")
+    letter = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])["dispute_letter"]
+    for claim in ["NCCI", "National Correct Coding", "does not comply", "501(r)",
+                  "No Surprises", "violation", "unlawful", "illegal"]:
+        assert claim not in letter, f"letter must not assert {claim!r} before counsel review"
+
+
 def test_code_names_loaded_and_labelled():
     """HCPCS Level II names are shown as-is; authored CPT names are marked."""
     assert len(BillingAuditor.CODE_NAMES) > 1000
