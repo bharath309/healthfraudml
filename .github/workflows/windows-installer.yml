@@ -1,0 +1,94 @@
+name: Windows installer
+
+# Exercises install/setup_billaudit.bat on a real Windows runner.
+#
+# Covered: Python detection, pip install, ~\BillAudit creation, the curl
+# downloads, the generated run_audit.bat (its %% escaping is the most
+# breakage-prone part), and the verification audit.
+#
+# NOT covered: the Python-bootstrap branch (download + silent install), because
+# GitHub runners already ship Python so that branch never fires. That path still
+# needs one manual run on a clean Windows VM before the script goes to partners.
+
+on:
+  push:
+    paths:
+      - "install/**"
+      - ".github/workflows/windows-installer.yml"
+  pull_request:
+    paths:
+      - "install/**"
+      - ".github/workflows/windows-installer.yml"
+  workflow_dispatch:
+
+jobs:
+  run-installer:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The script fetches pilot_audit.py and the sample CSV from `main`. On a
+      # branch those files may not be on `main` yet, so point the copy under
+      # test at the current ref. The committed script is never modified.
+      - name: Stage script with branch-pinned download URLs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staged | Out-Null
+          $ref = "${{ github.head_ref || github.ref_name }}"
+          Write-Host "Pinning raw URLs to ref: $ref"
+          (Get-Content install/setup_billaudit.bat -Raw) `
+            -replace 'healthfraudml/main/examples', "healthfraudml/$ref/examples" `
+            | Set-Content staged/setup_billaudit.bat
+          Select-String -Path staged/setup_billaudit.bat -Pattern 'raw.githubusercontent'
+
+      # `pause` waits on a keypress and would hang the runner; feeding stdin
+      # satisfies it without editing the script.
+      - name: Run the installer
+        shell: cmd
+        run: echo. | cmd /c staged\setup_billaudit.bat
+
+      - name: Verify the installer did what it claims
+        shell: pwsh
+        run: |
+          $folder = Join-Path $env:USERPROFILE 'BillAudit'
+          $failed = $false
+
+          function Check($label, $condition) {
+            if ($condition) { Write-Host "PASS: $label" }
+            else { Write-Host "FAIL: $label"; $script:failed = $true }
+          }
+
+          Check "BillAudit folder created"      (Test-Path $folder)
+          Check "pilot_audit.py downloaded"     (Test-Path "$folder\pilot_audit.py")
+          Check "sample CSV downloaded"         (Test-Path "$folder\sample_claims_pilot.csv")
+          Check "run_audit.bat generated"       (Test-Path "$folder\run_audit.bat")
+          Check "verification report produced"  (Test-Path "$folder\setup_test.md")
+
+          if (Test-Path "$folder\setup_test.md") {
+            $report = Get-Content "$folder\setup_test.md" -Raw
+            Check "report contains findings section" ($report -match 'Findings')
+          }
+
+          # The generated runner is the most escaping-sensitive part: run it
+          # against a fresh CSV and confirm it produces a report.
+          if (Test-Path "$folder\run_audit.bat") {
+            Set-Content "$folder\ci_case.csv" "cpt_code,amount,description`n70450,2400.00,CT head without contrast"
+            Push-Location $folder
+            cmd /c "echo. | run_audit.bat" | Out-Host
+            Pop-Location
+            Check "generated runner produced ci_case_report.md" (Test-Path "$folder\ci_case_report.md")
+          }
+
+          if ($failed) { throw "Windows installer verification failed" }
+          Write-Host "All installer checks passed."
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: billaudit-output
+          path: ~/BillAudit
+          if-no-files-found: ignore
