@@ -480,11 +480,24 @@ class BillingAuditor:
 
         bill_table = ""
         for item in audited_items:
+            code = item["cpt_code"]
             ref_str = (
                 f" (review ceiling: ${item['fair_max_ref']:.2f})"
                 if item["fair_max_ref"] else ""
             )
-            bill_table += f"  - {self.code_system(item['cpt_code'])} {item['cpt_code']}: {item['description']} - ${item['billed_amount']:.2f}{ref_str} [{item['status']}]\n"
+            # State what the code means, not what the bill claims it means. When
+            # the bill's own wording differs, quote it separately rather than
+            # presenting it as the code's definition - otherwise a miscoded line
+            # gets its error repeated back in our own letter.
+            official = self.code_name(code)
+            bill_wording = item["description"] if item.get("description_source") == "bill" else None
+            shown = official or item["description"]
+            bill_table += (
+                f"  - {self.code_system(code)} {code}: {shown} "
+                f"- ${item['billed_amount']:.2f}{ref_str} [{item['status']}]\n"
+            )
+            if official and bill_wording and bill_wording.strip().lower() != official.strip().lower():
+                bill_table += f'      (this line is described on the bill as: "{bill_wording}")\n'
 
         # Factual, checkable anchor: the published Medicare national payment.
         # Stated as a comparison, not as an assertion about what is owed.

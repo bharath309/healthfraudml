@@ -262,3 +262,23 @@ def test_hcpcs_codes_are_not_called_cpt():
     letter = report["dispute_letter"]
     assert "CPT J1885" not in letter
     assert "HCPCS J1885" in letter
+
+
+def test_letter_states_code_meaning_not_the_bills_claim():
+    """A miscoded line must not have its error repeated back in our letter."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    letter = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+    ])["dispute_letter"] or ""
+    # No findings on this bill, so no letter is generated; assert via the item.
+    report = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])
+    letter = report["dispute_letter"]
+    # The code's actual meaning is stated...
+    assert "Administration of pneumococcal vaccine" in letter
+    # ...and the bill's differing wording is quoted, not asserted as the meaning.
+    assert 'described on the bill as: "administration of influenza vaccine"' in letter
