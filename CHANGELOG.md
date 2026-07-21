@@ -22,6 +22,19 @@ for this service?"
 - Report line items and the coding audit now show a name for every code, with
   display order: partner CSV `description` → known name → `no description available`.
 
+### Changed
+- **"Review ceiling", not "fair market value".** The 5× Medicare threshold is a
+  screening heuristic with no standing in a billing dispute, so it is no longer
+  described in language that implies otherwise. Reports, findings and the dispute
+  letter now say "review ceiling (5× Medicare rate)". The `fair_max` column keeps
+  its name for backward compatibility; only the user-facing wording changed.
+- **Dispute letter leads with a checkable fact.** Instead of asserting fair market
+  value, the letter now states the published Medicare national payment alongside
+  the billed amount and the multiple ("Medicare's national payment is $250.00;
+  this bill charges $6,672.00 — 26.7× that amount"), noting that CMS rates can be
+  verified independently and are a reference point, not a claim about what is
+  legally owed.
+
 ### Fixed
 - **Unbundling false positive**: an E/M line plus *any* other line used to flag
   potential unbundling, including diagnostics (e.g. `99213` + chest X-ray).

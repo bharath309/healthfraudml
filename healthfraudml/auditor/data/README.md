@@ -67,12 +67,19 @@ uses the partner's own `description` column for display.
 | `cpt_code` | 5-char CPT/HCPCS code |
 | `medicare_min` | lower of facility / non-facility national payment |
 | `medicare_max` | higher of facility / non-facility national payment |
-| `fair_min` | = `medicare_max` (floor of the "fair" band) |
-| `fair_max` | **disclosed heuristic** dispute ceiling = `medicare_max` × 5.0 |
+| `fair_min` | = `medicare_max` (lower edge of the band) |
+| `fair_max` | **review ceiling** = `medicare_max` × 5.0 (disclosed heuristic) |
 
-`fair_max` is **not an official figure**. It is a heuristic threshold that flags
-charges far above Medicare for human review; a charge above it is a prompt to
-look, not proof of fraud. Tune the multiplier in `scripts/build_cms_benchmark.py`.
+`fair_max` is the **review ceiling**, not a legal maximum and not an official
+figure. It is a screening threshold that flags charges far above Medicare for
+human review; a charge above it is a prompt to look, not proof of fraud and not
+a statement about what is legally owed. Reports and letters therefore describe
+it as "review ceiling (5× Medicare rate)" and lead with the published Medicare
+national payment — a checkable fact — rather than any "fair market value" claim.
+
+The column keeps its `fair_max` name for backward compatibility with v0.2.0
+data files; only the user-facing wording changed. Tune the multiplier in
+`scripts/build_cms_benchmark.py`.
 
 ## Regenerating
 

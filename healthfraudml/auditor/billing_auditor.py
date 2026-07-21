@@ -279,14 +279,20 @@ class BillingAuditor:
                 "status": "Clear",
                 "notes": "",
                 "fair_max_ref": ref["fair_max"] if ref else None,
+                "medicare_max_ref": ref.get("medicare_max") if ref else None,
             }
 
             if ref:
-                # Check for extreme pricing
+                # Check for extreme pricing against the review ceiling. This is a
+                # screening threshold, not a legal maximum — the naming must not
+                # imply it carries any standing in a dispute.
                 if amount > ref["fair_max"]:
                     audit_entry["status"] = "Overpriced"
                     diff = amount - ref["fair_max"]
-                    audit_entry["notes"] = f"Billed amount exceeds fair ceiling of ${ref['fair_max']:.2f} by ${diff:.2f}."
+                    audit_entry["notes"] = (
+                        f"Billed amount exceeds the review ceiling "
+                        f"(5x Medicare rate) of ${ref['fair_max']:.2f} by ${diff:.2f}."
+                    )
                     has_overpricing = True
                     item_savings[idx] = max(item_savings[idx], diff)
                 
@@ -384,8 +390,16 @@ class BillingAuditor:
                         "severity": "High",
                         "message": (
                             f"CPT {item['cpt_code']}{self._name_suffix(item['cpt_code'])} "
-                            f"is overpriced at ${item['billed_amount']:.2f}. "
-                            f"Fair market value max is ${item['fair_max_ref']:.2f}."
+                            f"is billed at ${item['billed_amount']:.2f}, above the "
+                            f"review ceiling (5x Medicare rate) of "
+                            f"${item['fair_max_ref']:.2f}."
+                            + (
+                                f" Medicare's national payment for this service is "
+                                f"${item['medicare_max_ref']:.2f} "
+                                f"({item['billed_amount'] / item['medicare_max_ref']:.1f}x)."
+                                if item.get("medicare_max_ref")
+                                else ""
+                            )
                         )
                     })
 
@@ -429,8 +443,32 @@ class BillingAuditor:
 
         bill_table = ""
         for item in audited_items:
-            ref_str = f" (Fair Max: ${item['fair_max_ref']:.2f})" if item["fair_max_ref"] else ""
+            ref_str = (
+                f" (review ceiling: ${item['fair_max_ref']:.2f})"
+                if item["fair_max_ref"] else ""
+            )
             bill_table += f"  - CPT {item['cpt_code']}: {item['description']} - ${item['billed_amount']:.2f}{ref_str} [{item['status']}]\n"
+
+        # Factual, checkable anchor: the published Medicare national payment.
+        # Stated as a comparison, not as an assertion about what is owed.
+        medicare_lines = ""
+        for item in audited_items:
+            rate = item.get("medicare_max_ref")
+            if rate and item["billed_amount"] > rate:
+                multiple = item["billed_amount"] / rate
+                medicare_lines += (
+                    f"  - CPT {item['cpt_code']}: Medicare's national payment is "
+                    f"${rate:.2f}; this bill charges ${item['billed_amount']:.2f} "
+                    f"({multiple:.1f}x that amount).\n"
+                )
+        medicare_block = (
+            "Reference — published Medicare national payment amounts:\n"
+            f"{medicare_lines}\n"
+            "(Medicare rates are published by CMS in the Physician Fee Schedule and\n"
+            "can be verified independently. They are provided as a factual reference\n"
+            "point, not as a claim about the amount legally owed.)\n\n"
+            if medicare_lines else ""
+        )
 
         letter = f"""Subject: Formal Billing Dispute & Audit Request - Urgent
 
@@ -448,14 +486,15 @@ Summary of Audit Findings:
 {findings_bullets}
 Itemized Bill Breakdown:
 {bill_table}
-Under standard medical coding rules:
+{medicare_block}Under standard medical coding rules:
 1. Evaluation and Management (E/M) services are generally bundled into the procedure charge when performed on the same day. 
 2. Visit levels must match the clinical severity of the condition. Billing a Level 5 visit (CPT 99285) for minor outpatient procedures is considered upcoding and does not comply with National Correct Coding Initiative (NCCI) guidelines.
 
 Based on these findings, I request:
 - A formal coding audit of my chart and physician notes to adjust the E/M codes to the correct level of care.
 - Correction or removal of duplicate/unbundled same-day fees.
-- Adjustment of any overpriced fees exceeding fair market value.
+- Review of charges that sit far above the published Medicare national rate for
+  the same service, as itemized above.
 
 I request that this account be placed on "Dispute Status" and all collection actions suspended while this audit is performed. I look forward to receiving a revised, corrected statement.
 
