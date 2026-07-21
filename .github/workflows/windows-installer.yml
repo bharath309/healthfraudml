@@ -44,6 +44,18 @@ jobs:
             | Set-Content staged/setup_billaudit.bat
           Select-String -Path staged/setup_billaudit.bat -Pattern 'raw.githubusercontent'
 
+      # The installer pulls the package from PyPI, which lags this branch. Without
+      # this step CI would exercise the last published release rather than the code
+      # under review, and pass on behaviour this PR has already changed.
+      # Installing the checkout first means the installer's `pip install --upgrade`
+      # is a no-op (PyPI's version is older), so the script runs against this code.
+      - name: Pre-install the package from this checkout
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[rag]"
+          python -c "import healthfraudml; print('under test:', healthfraudml.__version__)"
+
       # `pause` waits on a keypress and would hang the runner; feeding stdin
       # satisfies it without editing the script.
       - name: Run the installer
@@ -90,6 +102,14 @@ jobs:
           if (Test-Path "$folder\setup_test.md") {
             $report = Get-Content "$folder\setup_test.md" -Raw
             Check "report contains findings section" ($report -match 'Findings')
+
+            # Behaviour assertions, not just "a file appeared". These catch the
+            # case where the installer silently runs an older published package
+            # than the code under review.
+            Check "uses 'review ceiling' wording"        ($report -match 'review ceiling')
+            Check "no stale 'fair market value' wording" ($report -notmatch 'Fair market value')
+            Check "includes the Medicare rate anchor"    ($report -match "Medicare's national payment")
+            Check "coding audit section present"         ($report -match 'Coding audit')
           }
 
           # The generated runner is the most escaping-sensitive part: run it
