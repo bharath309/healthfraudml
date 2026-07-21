@@ -28,7 +28,7 @@ echo "[1/4] Found Python: $($PY --version 2>&1)"
 echo "[2/4] Installing HealthFraudML (may take a minute)..."
 $PY -m pip install --quiet --upgrade healthfraudml 2>/dev/null \
   || $PY -m pip install --quiet --user --upgrade healthfraudml \
-  || { echo "!! pip install failed - open an issue: https://github.com/bharath309/healthfraudml/issues"; read -r -p "Press Enter to close..." _; exit 1; }
+  || { echo "!! pip install failed - email bharath.p90@gmail.com"; read -r -p "Press Enter to close..." _; exit 1; }
 
 # --- 3. set up the BillAudit folder ----------------------------------------
 FOLDER="$HOME/BillAudit"
@@ -72,6 +72,6 @@ if $PY pilot_audit.py sample_claims_pilot.csv --provider "Setup Test" --out setu
   echo "=============================================="
   command -v open >/dev/null 2>&1 && open "$FOLDER"
 else
-  echo "!! Verification run failed - open an issue: https://github.com/bharath309/healthfraudml/issues"
+  echo "!! Verification run failed - email bharath.p90@gmail.com"
 fi
 read -r -p "Press Enter to close..." _

@@ -67,6 +67,6 @@ if exist "%FOLDER%\setup_test.md" (
 
 :fail
 echo.
-echo !! Something went wrong - open an issue: https://github.com/bharath309/healthfraudml/issues
+echo !! Something went wrong - email bharath.p90@gmail.com
 pause
 exit /b 1
