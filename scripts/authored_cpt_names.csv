@@ -1,0 +1,11 @@
+code,plain_name
+99281,"Emergency department visit, level 1 (low severity)"
+99282,"Emergency department visit, level 2 (low to moderate severity)"
+99283,"Emergency department visit, level 3 (moderate severity)"
+99284,"Emergency department visit, level 4 (moderate to high severity)"
+99285,"Emergency department visit, level 5 (high severity)"
+99214,"Office visit, established patient, moderate complexity"
+99215,"Office visit, established patient, high complexity"
+12001,"Simple repair of a superficial wound, 2.5 cm or less"
+12002,"Simple repair of a superficial wound, 2.6 to 7.5 cm"
+56420,"Incision and drainage of a Bartholin gland abscess or cyst"

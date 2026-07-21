@@ -9,10 +9,23 @@ Author: Bharath Kumar Bahudhoddi, Ph.D.
 Based on doctoral research at the University of the Cumberlands.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Bharath Kumar Bahudhoddi"
 
 from healthfraudml.detector import FraudDetector
-from healthfraudml.auditor import BillingAuditor, LLMBillParser, CPTDatabase, RAGBillAuditor
+from healthfraudml.auditor import (
+    BillingAuditor,
+    LLMBillParser,
+    CPTDatabase,
+    RAGBillAuditor,
+    CodingAuditor,
+)
 
-__all__ = ["FraudDetector", "BillingAuditor", "LLMBillParser", "CPTDatabase", "RAGBillAuditor"]
+__all__ = [
+    "FraudDetector",
+    "BillingAuditor",
+    "LLMBillParser",
+    "CPTDatabase",
+    "RAGBillAuditor",
+    "CodingAuditor",
+]

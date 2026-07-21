@@ -57,6 +57,60 @@ def test_expanded_benchmark_flags_overpricing_without_severity():
     assert report["audited_items"][0]["status"] == "Overpriced"
 
 
+def test_unbundling_not_triggered_by_diagnostics():
+    """Regression: E/M + imaging must NOT flag unbundling (v0.3.0 fix).
+
+    Bundling rules concern minor surgical procedures with a global period,
+    not diagnostics like a chest X-ray.
+    """
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "99213", "amount": 210.00, "description": "Office visit"},
+        {"cpt_code": "71046", "amount": 120.00, "description": "Chest X-ray 2 views"},
+    ])
+    assert "Unbundling" not in [f["type"] for f in report["findings"]]
+
+
+def test_unbundling_preserved_for_curated_procedure():
+    """Regression: E/M + curated minor surgical procedure still flags unbundling."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])
+    types = [f["type"] for f in report["findings"]]
+    assert "Unbundling" in types
+    assert "Upcoding" in types
+    assert report["suggested_savings"] == 5472.0
+
+
+def test_code_names_loaded_and_labelled():
+    """HCPCS Level II names are shown as-is; authored CPT names are marked."""
+    assert len(BillingAuditor.CODE_NAMES) > 1000
+    l2 = BillingAuditor.code_name("G0008")
+    assert l2 and "unofficial" not in l2
+    authored = BillingAuditor.code_name("99285")
+    assert authored and authored.endswith("(unofficial name)")
+    # No AMA CPT descriptors: numeric codes never come from the HCPCS file.
+    for code, entry in BillingAuditor.CODE_NAMES.items():
+        if entry["source"] == "cms_hcpcs_l2":
+            assert code[0].isalpha() and code[0].upper() != "D"
+
+
+def test_description_display_order():
+    """Partner description wins; otherwise fall back to a name, else say so."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "G0008", "amount": 50.0, "description": "Partner's own wording"},
+        {"cpt_code": "G0008", "amount": 50.0},
+        {"cpt_code": "ZZZZZ", "amount": 50.0},
+    ])
+    items = report["audited_items"]
+    assert items[0]["description"] == "Partner's own wording"
+    assert "influenza" in items[1]["description"].lower()
+    assert items[2]["description"] == "no description available"
+
+
 def test_unknown_code_bypasses_benchmark_not_dropped():
     auditor = BillingAuditor(provider_name="Clinic")
     report = auditor.audit_bill([

@@ -69,6 +69,8 @@ def main():
     ap.add_argument("csv_file", type=Path, help="CSV with columns: cpt_code, amount, description")
     ap.add_argument("--provider", default="Pilot Provider", help="Provider/facility name for the report")
     ap.add_argument("--out", type=Path, default=Path("audit_report"), help="Output basename (writes .json and .md)")
+    ap.add_argument("--no-coding-audit", action="store_true",
+                    help="Skip the coding audit (code-vs-description check)")
     args = ap.parse_args()
 
     try:
@@ -84,6 +86,21 @@ def main():
     auditor = BillingAuditor(provider_name=args.provider)
     report = auditor.audit_bill(items)
 
+    # --- coding audit: is the code right for the described service? ---
+    coding_rows = []
+    coding_limits = ""
+    if not args.no_coding_audit:
+        try:
+            from healthfraudml.auditor.coding_audit import CodingAuditor, CODING_AUDIT_LIMITS
+            coding = CodingAuditor()
+            coding_rows = coding.audit_bill(items)
+            coding_limits = CODING_AUDIT_LIMITS
+            if not coding.available:
+                print("\nCoding audit not available — install healthfraudml[rag] to enable it.")
+        except Exception as exc:  # never let the coding audit break the price audit
+            print(f"\nCoding audit skipped ({exc.__class__.__name__}: {exc}).")
+    report["coding_audit"] = coding_rows
+
     # --- console summary ---
     print("=" * 62)
     print(f"  Provider:            {report['provider_name']}")
@@ -97,6 +114,20 @@ def main():
             print(f"  • [{finding.get('severity','?')}] {finding.get('type','Finding')}: {finding.get('message','')}")
         else:
             print(f"  • {finding}")
+
+    if coding_rows:
+        print("\nCODING AUDIT (code vs. described service):")
+        print("-" * 62)
+        for row in coding_rows:
+            name = row.get("billed_name") or "no name available"
+            print(f"  {row['cpt_code']} — {name}")
+            detail = ""
+            if row.get("resolved_code") and row["verdict"] != "MATCH":
+                detail = f" → resolves to {row['resolved_code']}"
+            sim = f" (similarity {row['similarity']})" if row.get("similarity") is not None else ""
+            print(f"    {row['verdict']}{detail}{sim}")
+            if row.get("note"):
+                print(f"    {row['note']}")
 
     # --- write artifacts ---
     json_path = args.out.with_suffix(".json")
@@ -129,6 +160,19 @@ def main():
         status = it.get("status", "")
         note = it.get("notes", "")
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
+    if coding_rows:
+        lines += ["", "## Coding audit", "",
+                  "| Code | Name | Verdict | Resolves to | Similarity |",
+                  "|---|---|---|---|---|"]
+        for row in coding_rows:
+            name = row.get("billed_name") or "_no name available_"
+            resolved = row.get("resolved_code") or "—"
+            if row.get("resolved_name") and row.get("resolved_code"):
+                resolved = f"{row['resolved_code']} ({row['resolved_name']})"
+            sim = row["similarity"] if row.get("similarity") is not None else "—"
+            lines.append(f"| `{row['cpt_code']}` | {name} | **{row['verdict']}** | {resolved} | {sim} |")
+        lines += ["", f"> {coding_limits}", ""]
+
     lines += ["", "## Draft dispute letter", "", "```", str(report.get("dispute_letter", "")).strip(), "```", ""]
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
