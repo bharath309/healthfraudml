@@ -128,6 +128,8 @@ def main():
             print(f"    {row['verdict']}{detail}{sim}")
             if row.get("note"):
                 print(f"    {row['note']}")
+        if coding_limits:
+            print(f"\n  NOTE: {coding_limits}")
 
     # --- write artifacts ---
     json_path = args.out.with_suffix(".json")

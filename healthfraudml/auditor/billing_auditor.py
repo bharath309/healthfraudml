@@ -174,6 +174,12 @@ class BillingAuditor:
     CODE_NAMES = _load_code_names()
 
     @classmethod
+    def _name_suffix(cls, cpt_code: str) -> str:
+        """`` (Name)`` for use inside finding messages, or '' if we have none."""
+        name = cls.code_name(cpt_code)
+        return f" ({name})" if name else ""
+
+    @classmethod
     def code_name(cls, cpt_code: str) -> Optional[str]:
         """Display name for a code, or None if we have no name for it.
 
@@ -328,7 +334,8 @@ class BillingAuditor:
                         "type": "Upcoding",
                         "severity": "High",
                         "message": (
-                            f"Potential Upcoding on E/M visit code {em_cpt} (${em_amount:.2f}). "
+                            f"Potential Upcoding on E/M visit code {em_cpt}"
+                            f"{self._name_suffix(em_cpt)} (${em_amount:.2f}). "
                             f"The performed procedures are classified as minor/moderate, which does not "
                             f"support a Level {em_ref['severity']} visit. Recommended to downcode to "
                             f"{suggested_cpt} ({suggested_ref['description']}), saving up to ${savings:.2f}."
@@ -375,7 +382,11 @@ class BillingAuditor:
                     findings.append({
                         "type": "Overpricing",
                         "severity": "High",
-                        "message": f"CPT {item['cpt_code']} is overpriced at ${item['billed_amount']:.2f}. Fair market value max is ${item['fair_max_ref']:.2f}."
+                        "message": (
+                            f"CPT {item['cpt_code']}{self._name_suffix(item['cpt_code'])} "
+                            f"is overpriced at ${item['billed_amount']:.2f}. "
+                            f"Fair market value max is ${item['fair_max_ref']:.2f}."
+                        )
                     })
 
         suggested_savings = sum(item_savings)
