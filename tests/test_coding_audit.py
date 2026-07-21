@@ -83,3 +83,18 @@ def test_audit_bill_covers_every_line(auditor):
     assert len(rows) == 2
     assert rows[0]["verdict"] == MATCH
     assert rows[1]["verdict"] == NOT_VALIDATABLE_EM
+
+
+def test_authored_names_are_not_matchable(auditor):
+    """Project-authored paraphrases must never drive a coding suggestion."""
+    indexable = auditor.indexable_codes()
+    assert all(e["source"] == "cms_hcpcs_l2" for e in indexable.values())
+    assert "56420" not in indexable          # authored name -> display only
+    assert "G0008" in indexable              # official CMS name -> matchable
+
+
+def test_authored_only_code_declines_rather_than_misflags(auditor):
+    """A code with only an unofficial name yields CANNOT VALIDATE, not a miscoding."""
+    result = auditor.audit_line("56420", "Bartholin Cyst I&D")
+    assert result["verdict"] == CANNOT_VALIDATE
+    assert "unofficial name" in result["note"]

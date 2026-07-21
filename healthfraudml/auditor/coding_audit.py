@@ -97,12 +97,37 @@ class CodingAuditor:
         self._collection = client.get_or_create_collection(
             name="code_names", metadata={"hnsw:space": "cosine"}
         )
-        if self._collection.count() == 0:
+        # Rebuild when the persisted index does not match the current
+        # vocabulary, otherwise a stale cache silently keeps answering with
+        # codes that are no longer indexable.
+        expected = len(self.indexable_codes())
+        if self._collection.count() != expected:
+            if self._collection.count():
+                client.delete_collection("code_names")
+                self._collection = client.get_or_create_collection(
+                    name="code_names", metadata={"hnsw:space": "cosine"}
+                )
             self._build_index()
 
+    @staticmethod
+    def indexable_codes() -> Dict[str, Dict[str, str]]:
+        """The vocabulary the matcher is allowed to resolve descriptions against.
+
+        Only official CMS HCPCS Level II descriptions qualify. Project-authored
+        paraphrases are deliberately excluded: matching a bill against wording
+        this project invented would let an unofficial name drive a coding
+        suggestion. Those codes still get their name displayed - they just
+        cannot be the answer to "what does this description sound like".
+        """
+        return {
+            code: entry
+            for code, entry in BillingAuditor.CODE_NAMES.items()
+            if entry.get("source") == "cms_hcpcs_l2"
+        }
+
     def _build_index(self) -> None:
-        """Embed the plain-language code vocabulary (one-time, then cached)."""
-        names = BillingAuditor.CODE_NAMES
+        """Embed the matchable code vocabulary (one-time, then cached)."""
+        names = self.indexable_codes()
         ids: List[str] = []
         docs: List[str] = []
         metas: List[Dict[str, Any]] = []
@@ -166,15 +191,23 @@ class CodingAuditor:
             result["note"] = "no description provided on this line."
             return result
 
-        # A comparison is only meaningful if the billed code is itself in the
+        # A comparison is only meaningful if the billed code is in the *indexed*
         # vocabulary. Otherwise the description can only ever resolve to some
-        # *other* code, which would manufacture a false "possible miscoding".
-        # (Numeric CPT names are authored incrementally — see code_names.csv.)
-        if billed not in BillingAuditor.CODE_NAMES:
-            result["note"] = (
-                f"no plain-language name on file for billed code {billed}, "
-                "so the description cannot be compared against it."
-            )
+        # other code, manufacturing a false "possible miscoding". Note this is
+        # stricter than "has a name": a code with only a project-authored name
+        # is displayable but not matchable.
+        if billed not in self.indexable_codes():
+            if billed in BillingAuditor.CODE_NAMES:
+                result["note"] = (
+                    f"billed code {billed} has only an unofficial name on file, "
+                    "which is not used for matching, so the description cannot "
+                    "be compared against it."
+                )
+            else:
+                result["note"] = (
+                    f"no plain-language name on file for billed code {billed}, "
+                    "so the description cannot be compared against it."
+                )
             return result
 
         candidates = self.resolve(description)
@@ -253,6 +286,9 @@ def plain_detail(row: Dict[str, Any]) -> str:
     note = (row.get("note") or "").lower()
     if "not available" in note:
         return "Needs the optional install (see setup notes)."
+    if "unofficial name" in note:
+        return ("We only match against official code descriptions, and this code "
+                "has none on file yet.")
     if "no plain-language name" in note:
         return "No description on file for this code yet."
     if "no description provided" in note:
