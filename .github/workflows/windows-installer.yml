@@ -49,12 +49,20 @@ jobs:
       # under review, and pass on behaviour this PR has already changed.
       # Installing the checkout first means the installer's `pip install --upgrade`
       # is a no-op (PyPI's version is older), so the script runs against this code.
+      # Install into BOTH interpreters: the script prefers `py`, which on these
+      # runners is a different interpreter from `python`. Installing into only
+      # one leaves the other to fall back to PyPI's older release.
       - name: Pre-install the package from this checkout
-        shell: pwsh
+        shell: cmd
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install ".[rag]"
-          python -c "import healthfraudml; print('under test:', healthfraudml.__version__)"
+          for %%p in (py python) do (
+            where %%p >nul 2>nul && (
+              echo === installing into %%p ===
+              %%p -m pip install --quiet --upgrade pip
+              %%p -m pip install --quiet ".[rag]" || exit /b 1
+              %%p -c "import healthfraudml; print('%%p under test:', healthfraudml.__version__)"
+            )
+          )
 
       # `pause` waits on a keypress and would hang the runner; feeding stdin
       # satisfies it without editing the script.
