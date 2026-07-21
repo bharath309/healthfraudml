@@ -183,6 +183,15 @@ class BillingAuditor:
         "none": "no description available",
     }
 
+    @staticmethod
+    def code_system(code: str) -> str:
+        """'CPT' for numeric Level I codes, 'HCPCS' for letter-prefixed Level II.
+
+        Calling a J- or G-code "CPT" in a letter to a billing department is
+        wrong on its face and invites the whole letter being dismissed.
+        """
+        return "CPT" if str(code).strip()[:1].isdigit() else "HCPCS"
+
     @classmethod
     def code_name_source(cls, cpt_code: str) -> Optional[str]:
         """Where this code's name came from: 'cms_hcpcs_l2', 'authored', or None."""
@@ -324,7 +333,12 @@ class BillingAuditor:
                 else:
                     procedure_items.append((cpt, amount, ref, idx))
             else:
-                audit_entry["notes"] = "CPT code not in reference database; bypassed price benchmarking."
+                audit_entry["status"] = "Not price-checked"
+                audit_entry["notes"] = (
+                    "No Medicare physician fee schedule rate on file for this code, "
+                    "so its price was not benchmarked. Labs, drugs and supplies are "
+                    "paid under separate CMS fee schedules."
+                )
 
             audited_items.append(audit_entry)
 
@@ -398,7 +412,7 @@ class BillingAuditor:
             for em_cpt, _, _, _ in em_items:
                 for item in audited_items:
                     if item["cpt_code"] == em_cpt:
-                        if item["status"] == "Clear":
+                        if item["status"] in ("Clear", "Not price-checked"):
                             item["status"] = "Potential Unbundling"
                             item["notes"] = "E/M visit billed same day as procedure. Check bundling rules."
 
@@ -411,7 +425,8 @@ class BillingAuditor:
                         "type": "Overpricing",
                         "severity": "High",
                         "message": (
-                            f"CPT {item['cpt_code']}{self._name_suffix(item['cpt_code'])} "
+                            f"{self.code_system(item['cpt_code'])} {item['cpt_code']}"
+                            f"{self._name_suffix(item['cpt_code'])} "
                             f"is billed at ${item['billed_amount']:.2f}, above the "
                             f"review ceiling (5x Medicare rate) of "
                             f"${item['fair_max_ref']:.2f}."
@@ -469,7 +484,7 @@ class BillingAuditor:
                 f" (review ceiling: ${item['fair_max_ref']:.2f})"
                 if item["fair_max_ref"] else ""
             )
-            bill_table += f"  - CPT {item['cpt_code']}: {item['description']} - ${item['billed_amount']:.2f}{ref_str} [{item['status']}]\n"
+            bill_table += f"  - {self.code_system(item['cpt_code'])} {item['cpt_code']}: {item['description']} - ${item['billed_amount']:.2f}{ref_str} [{item['status']}]\n"
 
         # Factual, checkable anchor: the published Medicare national payment.
         # Stated as a comparison, not as an assertion about what is owed.
@@ -479,7 +494,8 @@ class BillingAuditor:
             if rate and item["billed_amount"] > rate:
                 multiple = item["billed_amount"] / rate
                 medicare_lines += (
-                    f"  - CPT {item['cpt_code']}: Medicare's national payment is "
+                    f"  - {self.code_system(item['cpt_code'])} {item['cpt_code']}: "
+                    f"Medicare's national payment is "
                     f"${rate:.2f}; this bill charges ${item['billed_amount']:.2f} "
                     f"({multiple:.1f}x that amount).\n"
                 )
@@ -510,7 +526,7 @@ class BillingAuditor:
                 "into the procedure charge when performed on the same day."
             )
         if "Upcoding" in finding_types:
-            codes = ", ".join(f"CPT {c}" for c in upcoded_codes) or "the billed visit code"
+            codes = ", ".join(f"{self.code_system(c)} {c}" for c in upcoded_codes) or "the billed visit code"
             rules.append(
                 "Visit levels must match the clinical severity of the condition. "
                 f"The level billed on {codes} does not appear to be supported by "
@@ -556,7 +572,7 @@ Dear {self.provider_name} Billing Representative,
 
 I am writing to formally dispute the charges on my recent bill of ${total_billed:.2f} from your facility, {self.provider_name}. 
 
-Following a review of the billed itemized CPT codes against published Medicare payment data and standard coding conventions, {discrepancy_phrase}:
+Following a review of the billed itemized codes against published Medicare payment data and standard coding conventions, {discrepancy_phrase}:
 
 Summary of Audit Findings:
 {findings_bullets}

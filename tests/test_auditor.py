@@ -153,8 +153,10 @@ def test_unknown_code_bypasses_benchmark_not_dropped():
     report = auditor.audit_bill([
         {"cpt_code": "0000X", "amount": 500.00, "description": "Unlisted proprietary"},
     ])
+    item = report["audited_items"][0]
     assert len(report["audited_items"]) == 1
-    assert "bypassed price benchmarking" in report["audited_items"][0]["notes"]
+    assert "not benchmarked" in item["notes"]
+    assert item["status"] == "Not price-checked"
 
 
 def test_billing_auditor_overpricing_only():
@@ -232,3 +234,31 @@ def test_llm_bill_parser_pdf_extraction(tmp_path):
     assert "Example Health System" in extracted_text
     assert "56420" in extracted_text
     assert "99285" in extracted_text
+
+
+def test_unbenchmarked_line_is_not_reported_as_clear():
+    """A line we never price-checked must not read as having passed a check."""
+    auditor = BillingAuditor(provider_name="Lab")
+    report = auditor.audit_bill([
+        {"cpt_code": "80053", "amount": 340.00, "description": "Comprehensive metabolic panel"},
+    ])
+    item = report["audited_items"][0]
+    assert item["status"] == "Not price-checked"
+    assert item["status"] != "Clear"
+    assert "not benchmarked" in item["notes"]
+
+
+def test_hcpcs_codes_are_not_called_cpt():
+    """J- and G-codes are HCPCS Level II; calling them CPT discredits the letter."""
+    assert BillingAuditor.code_system("J1885") == "HCPCS"
+    assert BillingAuditor.code_system("G0009") == "HCPCS"
+    assert BillingAuditor.code_system("99285") == "CPT"
+
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "J1885", "amount": 180.00, "description": "Ketorolac injection"},
+    ])
+    letter = report["dispute_letter"]
+    assert "CPT J1885" not in letter
+    assert "HCPCS J1885" in letter
