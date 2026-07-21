@@ -139,6 +139,7 @@ class CodingAuditor:
         result: Dict[str, Any] = {
             "cpt_code": billed,
             "billed_name": BillingAuditor.code_name(billed),
+            "billed_name_source": BillingAuditor.code_name_source(billed),
             "description": description or "",
             "verdict": CANNOT_VALIDATE,
             "resolved_code": None,
@@ -262,6 +263,26 @@ def plain_detail(row: Dict[str, Any]) -> str:
 def plain_verdict(row: Dict[str, Any]) -> str:
     """Status and explanation as a single sentence, for narrow layouts."""
     return f"{status_label(row)} - {plain_detail(row)}"
+
+
+def name_sources_legend(rows: List[Dict[str, Any]]) -> List[str]:
+    """Explain where the displayed names came from, for the sources in use.
+
+    A reader should never have to ask whether a description is their own
+    wording, an official CMS one, or something this project wrote.
+    """
+    used = {r.get("billed_name_source") for r in rows if r.get("billed_name_source")}
+    legend = []
+    if "cms_hcpcs_l2" in used:
+        legend.append(
+            "Names without a marker are official CMS HCPCS Level II descriptions."
+        )
+    if "authored" in used:
+        legend.append(
+            "Names marked (unofficial name) were written by this project, not taken "
+            "from the official code book."
+        )
+    return legend
 
 
 def coverage_summary(rows: List[Dict[str, Any]]) -> str:

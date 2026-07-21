@@ -173,6 +173,22 @@ class BillingAuditor:
     # code -> {"plain_name", "source"}; see _load_code_names().
     CODE_NAMES = _load_code_names()
 
+    #: Human-readable provenance for each name source, shown in reports so a
+    #: reader can tell where a description came from without asking.
+    NAME_SOURCE_LABELS = {
+        "bill": "as written on your bill",
+        "curated": "project-written name (unofficial)",
+        "cms_hcpcs_l2": "official CMS HCPCS Level II description",
+        "authored": "project-written name (unofficial)",
+        "none": "no description available",
+    }
+
+    @classmethod
+    def code_name_source(cls, cpt_code: str) -> Optional[str]:
+        """Where this code's name came from: 'cms_hcpcs_l2', 'authored', or None."""
+        entry = cls.CODE_NAMES.get(str(cpt_code).strip())
+        return entry.get("source") or None if entry else None
+
     @classmethod
     def _name_suffix(cls, cpt_code: str) -> str:
         """`` (Name)`` for use inside finding messages, or '' if we have none."""
@@ -265,16 +281,22 @@ class BillingAuditor:
 
             # Display order: partner CSV description -> curated/plain-language
             # name -> explicit "no description available" (never a guess).
-            resolved_desc = (
-                desc
-                or (ref.get("description") if ref else None)
-                or self.code_name(cpt)
-                or "no description available"
-            )
+            # Track which of those it was, so a reader can tell whether a name is
+            # their own wording, an official CMS description, or one we wrote.
+            if desc:
+                resolved_desc, desc_source = desc, "bill"
+            elif ref and ref.get("description"):
+                resolved_desc, desc_source = ref["description"], "curated"
+            elif self.code_name(cpt):
+                resolved_desc = self.code_name(cpt)
+                desc_source = self.code_name_source(cpt) or "authored"
+            else:
+                resolved_desc, desc_source = "no description available", "none"
             
             audit_entry = {
                 "cpt_code": cpt,
                 "description": resolved_desc,
+                "description_source": desc_source,
                 "billed_amount": amount,
                 "status": "Clear",
                 "notes": "",
