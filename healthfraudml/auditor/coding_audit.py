@@ -213,7 +213,60 @@ class CodingAuditor:
 
 #: Printed verbatim in reports so the limits travel with the output.
 CODING_AUDIT_LIMITS = (
-    "Coding audit is a similarity-based suggestion for review, not a coding "
-    "determination. E/M levels cannot be validated from a one-line description. "
-    "Codes absent from the vocabulary are reported as CANNOT VALIDATE, never guessed."
+    "This is a prompt to ask questions, not a coding decision. Anything flagged "
+    "here is worth raising with the provider or your insurer, not proof of an error."
 )
+
+
+def plain_verdict(row: Dict[str, Any]) -> str:
+    """Render a verdict as a sentence a patient or advocate can act on.
+
+    The machine-readable ``verdict`` stays in the data for downstream use; this
+    is purely how it is spoken to a human reading their own bill.
+    """
+    verdict = row.get("verdict")
+
+    if verdict == MATCH:
+        return "Looks right - the code matches the service described on the bill."
+
+    if verdict == POSSIBLE_MISCODING:
+        other = row.get("resolved_code")
+        other_name = row.get("resolved_name") or ""
+        suffix = f" {other} ({other_name})" if other_name else f" {other}"
+        return (
+            "Worth asking about - the service described on the bill sounds like a "
+            f"different code:{suffix}."
+        )
+
+    if verdict == NOT_VALIDATABLE_EM:
+        return (
+            "Can't be checked here - visit-level codes depend on the doctor's "
+            "notes, not on the bill."
+        )
+
+    # CANNOT VALIDATE covers several distinct situations; say which one.
+    note = (row.get("note") or "").lower()
+    if "not available" in note:
+        return "Not checked - this feature needs the optional install (see setup notes)."
+    if "no plain-language name" in note:
+        return "Not checked - we don't have a description on file for this code yet."
+    if "no description provided" in note:
+        return "Not checked - this line has no service description on the bill."
+    return "Not checked - the description doesn't match any service we recognise."
+
+
+def coverage_summary(rows: List[Dict[str, Any]]) -> str:
+    """One line telling the reader how much of the bill could be checked."""
+    total = len(rows)
+    checked = sum(1 for r in rows if r.get("verdict") in (MATCH, POSSIBLE_MISCODING))
+    em = sum(1 for r in rows if r.get("verdict") == NOT_VALIDATABLE_EM)
+    unchecked = total - checked - em
+
+    parts = []
+    if em:
+        parts.append(f"{em} {'needs' if em == 1 else 'need'} the doctor's notes")
+    if unchecked:
+        parts.append(f"{unchecked} {'has' if unchecked == 1 else 'have'} no description on file")
+    detail = f" - {'; '.join(parts)}" if parts else ""
+    line_word = "line" if total == 1 else "lines"
+    return f"Checked {checked} of {total} {line_word}{detail}."

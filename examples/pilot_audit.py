@@ -100,7 +100,9 @@ def main():
     coding_limits = ""
     if not args.no_coding_audit:
         try:
-            from healthfraudml.auditor.coding_audit import CodingAuditor, CODING_AUDIT_LIMITS
+            from healthfraudml.auditor.coding_audit import (
+                CodingAuditor, CODING_AUDIT_LIMITS, plain_verdict, coverage_summary,
+            )
             coding = CodingAuditor()
             coding_rows = coding.audit_bill(items)
             coding_limits = CODING_AUDIT_LIMITS
@@ -125,20 +127,15 @@ def main():
             print(f"  • {finding}")
 
     if coding_rows:
-        print("\nCODING AUDIT (code vs. described service):")
+        print("\nDOES THE CODE MATCH THE SERVICE?")
         print("-" * 62)
         for row in coding_rows:
-            name = row.get("billed_name") or "no name available"
-            print(f"  {row['cpt_code']} — {name}")
-            detail = ""
-            if row.get("resolved_code") and row["verdict"] != "MATCH":
-                detail = f" -> resolves to {row['resolved_code']}"
-            sim = f" (similarity {row['similarity']})" if row.get("similarity") is not None else ""
-            print(f"    {row['verdict']}{detail}{sim}")
-            if row.get("note"):
-                print(f"    {row['note']}")
+            name = row.get("billed_name") or "no description on file"
+            print(f"  {row['cpt_code']} - {name}")
+            print(f"    {plain_verdict(row)}")
+        print(f"\n  {coverage_summary(coding_rows)}")
         if coding_limits:
-            print(f"\n  NOTE: {coding_limits}")
+            print(f"  {coding_limits}")
 
     # --- write artifacts ---
     json_path = args.out.with_suffix(".json")
@@ -172,17 +169,13 @@ def main():
         note = it.get("notes", "")
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
     if coding_rows:
-        lines += ["", "## Coding audit", "",
-                  "| Code | Name | Verdict | Resolves to | Similarity |",
-                  "|---|---|---|---|---|"]
+        lines += ["", "## Does the code match the service?", "",
+                  "| Code | What it is | What we found |",
+                  "|---|---|---|"]
         for row in coding_rows:
-            name = row.get("billed_name") or "_no name available_"
-            resolved = row.get("resolved_code") or "—"
-            if row.get("resolved_name") and row.get("resolved_code"):
-                resolved = f"{row['resolved_code']} ({row['resolved_name']})"
-            sim = row["similarity"] if row.get("similarity") is not None else "—"
-            lines.append(f"| `{row['cpt_code']}` | {name} | **{row['verdict']}** | {resolved} | {sim} |")
-        lines += ["", f"> {coding_limits}", ""]
+            name = row.get("billed_name") or "_no description on file_"
+            lines.append(f"| `{row['cpt_code']}` | {name} | {plain_verdict(row)} |")
+        lines += ["", coverage_summary(coding_rows), "", f"> {coding_limits}", ""]
 
     lines += ["", "## Draft dispute letter", "", "```", str(report.get("dispute_letter", "")).strip(), "```", ""]
     with open(md_path, "w", encoding="utf-8") as f:
