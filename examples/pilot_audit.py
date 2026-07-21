@@ -130,15 +130,19 @@ def main():
     if coding_rows:
         print("\nDOES THE CODE MATCH THE SERVICE?")
         print("=" * 62)
-        print(f"  {'CODE':<8}{'STATUS':<15}SERVICE")
-        print(f"  {'-' * 7} {'-' * 14} {'-' * 36}")
         for row in coding_rows:
-            # Never truncate the service name: on an E/M line the part that
-            # would be cut ("level 5 (high severity)") is the part that matters.
-            name = row.get("billed_name") or "(no description on file)"
-            print(f"  {row['cpt_code']:<8}{status_label(row):<15}{name}")
-            print(f"  {'':<8}{'':<15}{plain_detail(row)}")
-        print()
+            # Show BOTH sides of the comparison. Collapsing them to one line
+            # hides the very thing this section exists to check: whether the
+            # code's meaning matches the service the bill describes.
+            # Never truncate: on an E/M line the part that would be cut
+            # ("level 5 (high severity)") is the part that matters.
+            code_means = row.get("billed_name") or "(no description on file for this code)"
+            bill_says = row.get("description") or "(no description given on the bill)"
+            print(f"  {row['cpt_code']:<8}{status_label(row)}")
+            print(f"  {'':<8}Code means:  {code_means}")
+            print(f"  {'':<8}Bill says:   {bill_says}")
+            print(f"  {'':<8}             {plain_detail(row)}")
+            print()
         print(f"  {coverage_summary(coding_rows)}")
         for note in name_sources_legend(coding_rows):
             print(f"  {note}")
@@ -178,12 +182,14 @@ def main():
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
     if coding_rows:
         lines += ["", "## Does the code match the service?", "",
-                  "| Code | Status | Service | What we found |",
-                  "|---|---|---|---|"]
+                  "| Code | Status | What the code means | What the bill says | What we found |",
+                  "|---|---|---|---|---|"]
         for row in coding_rows:
-            name = row.get("billed_name") or "_no description on file_"
+            code_means = row.get("billed_name") or "_no description on file_"
+            bill_says = row.get("description") or "_not given_"
             lines.append(
-                f"| `{row['cpt_code']}` | **{status_label(row)}** | {name} | {plain_detail(row)} |"
+                f"| `{row['cpt_code']}` | **{status_label(row)}** | {code_means} "
+                f"| {bill_says} | {plain_detail(row)} |"
             )
         lines += ["", coverage_summary(coding_rows), ""]
         for note in name_sources_legend(coding_rows):
