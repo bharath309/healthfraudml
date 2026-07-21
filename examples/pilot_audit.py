@@ -65,6 +65,15 @@ def load_claims(csv_path: Path):
 
 
 def main():
+    # Windows consoles default to a legacy code page (cp1252) that cannot encode
+    # characters such as arrows. Without this, printing a report can raise
+    # UnicodeEncodeError part-way through and lose the run. Degrade to
+    # replacement characters instead of crashing.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
     ap = argparse.ArgumentParser(description="Audit a CSV of claim lines with HealthFraudML.")
     ap.add_argument("csv_file", type=Path, help="CSV with columns: cpt_code, amount, description")
     ap.add_argument("--provider", default="Pilot Provider", help="Provider/facility name for the report")
@@ -123,7 +132,7 @@ def main():
             print(f"  {row['cpt_code']} — {name}")
             detail = ""
             if row.get("resolved_code") and row["verdict"] != "MATCH":
-                detail = f" → resolves to {row['resolved_code']}"
+                detail = f" -> resolves to {row['resolved_code']}"
             sim = f" (similarity {row['similarity']})" if row.get("similarity") is not None else ""
             print(f"    {row['verdict']}{detail}{sim}")
             if row.get("note"):

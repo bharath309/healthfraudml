@@ -123,7 +123,11 @@ jobs:
           # The generated runner is the most escaping-sensitive part: run it
           # against a fresh CSV and confirm it produces a report.
           if (Test-Path "$folder\run_audit.bat") {
-            Set-Content "$folder\ci_case.csv" "cpt_code,amount,description`n70450,2400.00,CT head without contrast"
+            # G0009 billed but described as an influenza vaccination resolves to
+            # G0008 -> POSSIBLE MISCODING. That verdict is the only path that
+            # prints an arrow, which a cp1252 Windows console cannot encode.
+            # Exercise it deliberately so the crash cannot slip through on luck.
+            Set-Content "$folder\ci_case.csv" "cpt_code,amount,description`n70450,2400.00,CT head without contrast`nG0009,90.00,administration of influenza vaccine"
             Push-Location $folder
             cmd /c "echo. | run_audit.bat" | Out-Host
             Pop-Location
