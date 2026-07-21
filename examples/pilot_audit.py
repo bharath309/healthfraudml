@@ -102,7 +102,7 @@ def main():
         try:
             from healthfraudml.auditor.coding_audit import (
                 CodingAuditor, CODING_AUDIT_LIMITS, plain_verdict, coverage_summary,
-                status_label, plain_detail, name_sources_legend,
+                status_label, plain_detail, name_sources_legend, coverage_explanation,
             )
             coding = CodingAuditor()
             coding_rows = coding.audit_bill(items)
@@ -144,6 +144,8 @@ def main():
             print(f"  {'':<8}             {plain_detail(row)}")
             print()
         print(f"  {coverage_summary(coding_rows)}")
+        for note in coverage_explanation(coding_rows):
+            print(f"  {note}")
         for note in name_sources_legend(coding_rows):
             print(f"  {note}")
         if coding_limits:
@@ -192,6 +194,9 @@ def main():
                 f"| {bill_says} | {plain_detail(row)} |"
             )
         lines += ["", coverage_summary(coding_rows), ""]
+        expl = coverage_explanation(coding_rows)
+        if expl:
+            lines += ["> " + " ".join(expl), ""]
         for note in name_sources_legend(coding_rows):
             lines.append(f"_{note}_")
         lines += ["", f"> {coding_limits}", ""]

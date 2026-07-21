@@ -14,6 +14,7 @@ from healthfraudml.auditor.coding_audit import (
     NOT_VALIDATABLE_EM,
     POSSIBLE_MISCODING,
     CodingAuditor,
+    coverage_explanation,
     is_em_code,
 )
 
@@ -98,3 +99,22 @@ def test_authored_only_code_declines_rather_than_misflags(auditor):
     result = auditor.audit_line("56420", "Bartholin Cyst I&D")
     assert result["verdict"] == CANNOT_VALIDATE
     assert "unofficial name" in result["note"]
+
+
+def test_licensing_cap_is_explained_for_cpt_lines(auditor):
+    """Unchecked CPT lines must say WHY, not just that they were skipped."""
+    rows = auditor.audit_bill([
+        {"cpt_code": "70450", "description": "CT head without contrast"},
+    ])
+    text = " ".join(coverage_explanation(rows))
+    assert "70450" in text and "licensed" in text
+    # and the price audit is not implied to be affected
+    assert "prices are still checked" in text
+
+
+def test_no_licensing_note_when_all_codes_are_level_two(auditor):
+    """The explanation appears only when it actually applies."""
+    rows = auditor.audit_bill([
+        {"cpt_code": "G0008", "description": "administration of influenza vaccine"},
+    ])
+    assert coverage_explanation(rows) == []

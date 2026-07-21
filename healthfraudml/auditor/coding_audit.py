@@ -321,6 +321,31 @@ def name_sources_legend(rows: List[Dict[str, Any]]) -> List[str]:
     return legend
 
 
+def coverage_explanation(rows: List[Dict[str, Any]]) -> List[str]:
+    """Say *why* lines went unchecked, when the reason is the licensing cap.
+
+    Without this the report shows the symptom ("no description on file") and a
+    reader reasonably assumes an incomplete database that will fill in over
+    time. For numeric CPT codes that is not true: the descriptions are licensed,
+    so those lines stay unchecked until a licensed vocabulary is supplied.
+    """
+    unnamed_cpt = [
+        r for r in rows
+        if r.get("verdict") == CANNOT_VALIDATE
+        and not r.get("billed_name")
+        and str(r.get("cpt_code", "")).strip()[:1].isdigit()
+    ]
+    if not unnamed_cpt:
+        return []
+    codes = ", ".join(sorted({r["cpt_code"] for r in unnamed_cpt}))
+    return [
+        f"Codes not checked ({codes}) are CPT codes. Their official descriptions are",
+        "licensed by the AMA and are not distributed with this tool, so these lines",
+        "cannot be matched unless a licensed vocabulary is supplied locally.",
+        "Their prices are still checked - see the findings above.",
+    ]
+
+
 def coverage_summary(rows: List[Dict[str, Any]]) -> str:
     """One line telling the reader how much of the bill could be checked."""
     total = len(rows)
