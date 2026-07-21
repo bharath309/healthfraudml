@@ -102,6 +102,7 @@ def main():
         try:
             from healthfraudml.auditor.coding_audit import (
                 CodingAuditor, CODING_AUDIT_LIMITS, plain_verdict, coverage_summary,
+                status_label, plain_detail,
             )
             coding = CodingAuditor()
             coding_rows = coding.audit_bill(items)
@@ -128,12 +129,17 @@ def main():
 
     if coding_rows:
         print("\nDOES THE CODE MATCH THE SERVICE?")
-        print("-" * 62)
+        print("=" * 62)
+        print(f"  {'CODE':<8}{'STATUS':<15}SERVICE")
+        print(f"  {'-' * 7} {'-' * 14} {'-' * 36}")
         for row in coding_rows:
-            name = row.get("billed_name") or "no description on file"
-            print(f"  {row['cpt_code']} - {name}")
-            print(f"    {plain_verdict(row)}")
-        print(f"\n  {coverage_summary(coding_rows)}")
+            # Never truncate the service name: on an E/M line the part that
+            # would be cut ("level 5 (high severity)") is the part that matters.
+            name = row.get("billed_name") or "(no description on file)"
+            print(f"  {row['cpt_code']:<8}{status_label(row):<15}{name}")
+            print(f"  {'':<8}{'':<15}{plain_detail(row)}")
+        print()
+        print(f"  {coverage_summary(coding_rows)}")
         if coding_limits:
             print(f"  {coding_limits}")
 
@@ -170,11 +176,13 @@ def main():
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
     if coding_rows:
         lines += ["", "## Does the code match the service?", "",
-                  "| Code | What it is | What we found |",
-                  "|---|---|---|"]
+                  "| Code | Status | Service | What we found |",
+                  "|---|---|---|---|"]
         for row in coding_rows:
             name = row.get("billed_name") or "_no description on file_"
-            lines.append(f"| `{row['cpt_code']}` | {name} | {plain_verdict(row)} |")
+            lines.append(
+                f"| `{row['cpt_code']}` | **{status_label(row)}** | {name} | {plain_detail(row)} |"
+            )
         lines += ["", coverage_summary(coding_rows), "", f"> {coding_limits}", ""]
 
     lines += ["", "## Draft dispute letter", "", "```", str(report.get("dispute_letter", "")).strip(), "```", ""]

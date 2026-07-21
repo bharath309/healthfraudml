@@ -218,41 +218,50 @@ CODING_AUDIT_LIMITS = (
 )
 
 
-def plain_verdict(row: Dict[str, Any]) -> str:
-    """Render a verdict as a sentence a patient or advocate can act on.
+#: Short status shown in the leftmost column of the report.
+_STATUS_LABELS = {
+    MATCH: "Looks right",
+    POSSIBLE_MISCODING: "Ask about it",
+    NOT_VALIDATABLE_EM: "Needs notes",
+    CANNOT_VALIDATE: "Not checked",
+}
 
-    The machine-readable ``verdict`` stays in the data for downstream use; this
-    is purely how it is spoken to a human reading their own bill.
-    """
+
+def status_label(row: Dict[str, Any]) -> str:
+    """Two-word status for the report's status column."""
+    return _STATUS_LABELS.get(row.get("verdict"), "Not checked")
+
+
+def plain_detail(row: Dict[str, Any]) -> str:
+    """The one-line explanation shown beside the status."""
     verdict = row.get("verdict")
 
     if verdict == MATCH:
-        return "Looks right - the code matches the service described on the bill."
+        return "Matches the service described on the bill."
 
     if verdict == POSSIBLE_MISCODING:
         other = row.get("resolved_code")
         other_name = row.get("resolved_name") or ""
-        suffix = f" {other} ({other_name})" if other_name else f" {other}"
-        return (
-            "Worth asking about - the service described on the bill sounds like a "
-            f"different code:{suffix}."
-        )
+        target = f"{other} ({other_name})" if other_name else str(other)
+        return f"The description sounds like {target}."
 
     if verdict == NOT_VALIDATABLE_EM:
-        return (
-            "Can't be checked here - visit-level codes depend on the doctor's "
-            "notes, not on the bill."
-        )
+        return "Visit-level codes depend on the doctor's notes, not the bill."
 
     # CANNOT VALIDATE covers several distinct situations; say which one.
     note = (row.get("note") or "").lower()
     if "not available" in note:
-        return "Not checked - this feature needs the optional install (see setup notes)."
+        return "Needs the optional install (see setup notes)."
     if "no plain-language name" in note:
-        return "Not checked - we don't have a description on file for this code yet."
+        return "No description on file for this code yet."
     if "no description provided" in note:
-        return "Not checked - this line has no service description on the bill."
-    return "Not checked - the description doesn't match any service we recognise."
+        return "This line has no service description on the bill."
+    return "The description doesn't match any service we recognise."
+
+
+def plain_verdict(row: Dict[str, Any]) -> str:
+    """Status and explanation as a single sentence, for narrow layouts."""
+    return f"{status_label(row)} - {plain_detail(row)}"
 
 
 def coverage_summary(rows: List[Dict[str, Any]]) -> str:
