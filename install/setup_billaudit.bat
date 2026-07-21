@@ -1,6 +1,8 @@
 @echo off
-rem NOTE: not yet verified on a physical Windows machine — test before
-rem distributing to partners.
+rem NOTE: exercised on each push by .github/workflows/windows-installer.yml
+rem (a real windows-latest runner). The Python-bootstrap branch below is NOT
+rem covered there, because runners ship Python — test that path on a clean
+rem Windows machine before distributing to partners.
 setlocal
 title HealthFraudML - Bill Audit setup
 echo =============================================
@@ -26,6 +28,23 @@ rem --- 2. install the tool ----------------------------------------------
 echo [2/4] Installing HealthFraudML (may take a minute)...
 %PY% -m pip install --quiet --upgrade healthfraudml || goto :fail
 
+rem "py" (the launcher) and "python" can be different interpreters. Install into
+rem one and running with the other gives "not installed" at verification time,
+rem so confirm the chosen interpreter can actually import the package and switch
+rem if it cannot.
+%PY% -c "import healthfraudml" >nul 2>nul
+if errorlevel 1 (
+  echo     ^(switching interpreter: package not visible to %PY%^)
+  where python >nul 2>nul && set "PY=python"
+  %PY% -m pip install --quiet --upgrade healthfraudml || goto :fail
+  %PY% -c "import healthfraudml" >nul 2>nul || goto :fail
+)
+
+rem Resolve the interpreter to a full path so the generated runner uses exactly
+rem the same one, whatever is on PATH later.
+for /f "delims=" %%i in ('%PY% -c "import sys; print(sys.executable)"') do set "PYEXE=%%i"
+if not defined PYEXE set "PYEXE=%PY%"
+
 rem --- 3. BillAudit folder + files ----------------------------------------
 set "FOLDER=%USERPROFILE%\BillAudit"
 if not exist "%FOLDER%" mkdir "%FOLDER%"
@@ -41,7 +60,7 @@ echo set "found="
 echo for %%%%f in ^(*.csv^) do ^(
 echo   set "found=1"
 echo   echo Auditing %%%%f ...
-echo   py pilot_audit.py "%%%%f" --provider "%%%%~nf" --out "%%%%~nf_report"
+echo   "%PYEXE%" pilot_audit.py "%%%%f" --provider "%%%%~nf" --out "%%%%~nf_report"
 echo ^)
 echo if not defined found echo No CSV files here yet - put a bill CSV in this folder first.
 echo start .
@@ -51,7 +70,7 @@ echo pause
 rem --- 4. verification run ------------------------------------------------
 echo [4/4] Verification: auditing the sample bill...
 cd /d "%FOLDER%"
-%PY% pilot_audit.py sample_claims_pilot.csv --provider "Setup Test" --out setup_test >nul 2>nul
+"%PYEXE%" pilot_audit.py sample_claims_pilot.csv --provider "Setup Test" --out setup_test
 if exist "%FOLDER%\setup_test.md" (
   echo.
   echo ==============================================
