@@ -376,3 +376,32 @@ def test_uncoded_charge_alone_still_raises_risk():
     assert report["risk_level"] == "Medium"
     assert "Missing Code" in [f["type"] for f in report["findings"]]
     assert "itemised statement showing the CPT or HCPCS code" in report["dispute_letter"]
+
+
+def test_patient_header_is_never_taken_as_the_provider():
+    """Regression: a patient name must not end up addressed in the letter.
+
+    The old pattern let \\s+ span newlines, so a patient header line followed by
+    a line containing "Hospital" was captured as the provider and then written
+    into the outbound dispute letter three times.
+    """
+    parser = LLMBillParser(api_key=None)
+    text = (
+        "Name: Jane Doe | DOB: 1/1/1990 | Legal Name: Jane Doe\n"
+        "Hospital\n"
+        "ED Level 5 W/Proc - 99285 (CPT) $6,672.00\n"
+    )
+    data = parser.parse_bill_text(text)
+    assert "Jane Doe" not in data["provider_name"]
+    assert data["provider_name"] == LLMBillParser.PROVIDER_PLACEHOLDER
+    assert data["provider_name_source"] == "not_found"
+
+
+def test_real_provider_line_is_still_parsed():
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Example Health System Hospital Bill Details:\n"
+        "ED Proc Minor CPT 56420: $709.00\n"
+    )
+    assert "Example Health System" in data["provider_name"]
+    assert data["provider_name_source"] == "parsed"

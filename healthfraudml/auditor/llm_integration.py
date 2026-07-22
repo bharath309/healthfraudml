@@ -119,20 +119,47 @@ Return your response strictly as a JSON object with the following schema:
             
         return data
 
+    #: Placeholder emitted when no provider can be identified with confidence.
+    #: Deliberately looks like a blank to fill in, not like a real value.
+    PROVIDER_PLACEHOLDER = "[PROVIDER NAME]"
+
+    #: Lines carrying these markers describe the PATIENT, never the facility.
+    _PATIENT_HEADER_MARKERS = (
+        "name:", "dob", "date of birth", "patient", "mrn", "member",
+        "account", "guarantor", "subscriber", "legal name",
+    )
+
+    @classmethod
+    def _find_provider_name(cls, text: str):
+        """Identify the facility, or decline. Returns (name, source).
+
+        Matching is per line - the previous pattern let ``\\s+`` span newlines,
+        so a patient name on one line followed by "Hospital" on the next was
+        captured as the provider and then addressed in the dispute letter.
+        """
+        pattern = re.compile(
+            r"[A-Z][A-Za-z'&.-]+(?:[ \t]+[A-Z][A-Za-z'&.-]+)*"
+            r"[ \t]+(?:Health\s*System|Health|Hospital|Medical\s+Center|Clinic)"
+        )
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            # Skip anything that identifies the patient rather than the facility.
+            if any(m in stripped.lower() for m in cls._PATIENT_HEADER_MARKERS):
+                continue
+            match = pattern.search(stripped)
+            if match:
+                return match.group(0).strip(), "parsed"
+        return cls.PROVIDER_PLACEHOLDER, "not_found"
+
     def _parse_with_regex(self, text: str) -> Dict[str, Any]:
         """Robust regex fallback parser to extract common CPT codes and prices."""
         items = []
-        provider_name = "Unknown Provider"
-
-        # Attempt to find provider name
-        provider_matches = [
-            r"[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*\s+(?:Health\s+System|Health|Hospital|Medical\s+Center|Clinic)",
-        ]
-        for pat in provider_matches:
-            match = re.search(pat, text)
-            if match:
-                provider_name = match.group(0)
-                break
+        # Never guessed loosely: a wrong provider name is addressed to the wrong
+        # party in an outbound letter, and on a real portal bill the top of the
+        # document is the PATIENT header, not the facility.
+        provider_name, provider_name_source = self._find_provider_name(text)
 
         # Search line-by-line for CPT codes and associated dollar amounts
         lines = text.split("\n")
@@ -186,6 +213,7 @@ Return your response strictly as a JSON object with the following schema:
 
         return {
             "provider_name": provider_name,
+            "provider_name_source": provider_name_source,
             "items": items
         }
 
