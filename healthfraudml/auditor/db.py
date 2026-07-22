@@ -136,7 +136,7 @@ class CPTDatabase:
             doc = (
                 f"CPT {code}: {details['description']}. "
                 f"Medicare pricing ranges from ${details['medicare_min']} to ${details['medicare_max']}. "
-                f"Fair market pricing ranges from ${details['fair_min']} to ${details['fair_max']}. "
+                f"Review ceiling ranges from ${details['fair_min']} to ${details['fair_max']}. "
                 f"Severity level is {details['severity']}."
             )
             ids.append(code)

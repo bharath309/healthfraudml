@@ -65,10 +65,21 @@ def load_claims(csv_path: Path):
 
 
 def main():
+    # Windows consoles default to a legacy code page (cp1252) that cannot encode
+    # characters such as arrows. Without this, printing a report can raise
+    # UnicodeEncodeError part-way through and lose the run. Degrade to
+    # replacement characters instead of crashing.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
     ap = argparse.ArgumentParser(description="Audit a CSV of claim lines with HealthFraudML.")
     ap.add_argument("csv_file", type=Path, help="CSV with columns: cpt_code, amount, description")
     ap.add_argument("--provider", default="Pilot Provider", help="Provider/facility name for the report")
     ap.add_argument("--out", type=Path, default=Path("audit_report"), help="Output basename (writes .json and .md)")
+    ap.add_argument("--no-coding-audit", action="store_true",
+                    help="Skip the coding audit (code-vs-description check)")
     args = ap.parse_args()
 
     try:
@@ -82,7 +93,26 @@ def main():
     print(f"Loaded {len(items)} claim lines from {args.csv_file}")
 
     auditor = BillingAuditor(provider_name=args.provider)
-    report = auditor.audit_bill(items)
+
+    # --- coding audit: is the code right for the described service? ---
+    coding_rows = []
+    coding_limits = ""
+    if not args.no_coding_audit:
+        try:
+            from healthfraudml.auditor.coding_audit import (
+                CodingAuditor, CODING_AUDIT_LIMITS, plain_verdict, coverage_summary,
+                status_label, plain_detail, name_sources_legend, coverage_explanation,
+            )
+            coding = CodingAuditor()
+            coding_rows = coding.audit_bill(items)
+            coding_limits = CODING_AUDIT_LIMITS
+            if not coding.available:
+                print("\nCoding audit not available — install healthfraudml[rag] to enable it.")
+        except Exception as exc:  # never let the coding audit break the price audit
+            print(f"\nCoding audit skipped ({exc.__class__.__name__}: {exc}).")
+    # Coding results are computed first so the dispute letter can carry them.
+    report = auditor.audit_bill(items, coding_audit=coding_rows)
+    report["coding_audit"] = coding_rows
 
     # --- console summary ---
     print("=" * 62)
@@ -97,6 +127,30 @@ def main():
             print(f"  • [{finding.get('severity','?')}] {finding.get('type','Finding')}: {finding.get('message','')}")
         else:
             print(f"  • {finding}")
+
+    if coding_rows:
+        print("\nDOES THE CODE MATCH THE SERVICE?")
+        print("=" * 62)
+        for row in coding_rows:
+            # Show BOTH sides of the comparison. Collapsing them to one line
+            # hides the very thing this section exists to check: whether the
+            # code's meaning matches the service the bill describes.
+            # Never truncate: on an E/M line the part that would be cut
+            # ("level 5 (high severity)") is the part that matters.
+            code_means = row.get("billed_name") or "(no description on file for this code)"
+            bill_says = row.get("description") or "(no description given on the bill)"
+            print(f"  {row['cpt_code']:<8}{status_label(row)}")
+            print(f"  {'':<8}Code means:  {code_means}")
+            print(f"  {'':<8}Bill says:   {bill_says}")
+            print(f"  {'':<8}             {plain_detail(row)}")
+            print()
+        print(f"  {coverage_summary(coding_rows)}")
+        for note in coverage_explanation(coding_rows):
+            print(f"  {note}")
+        for note in name_sources_legend(coding_rows):
+            print(f"  {note}")
+        if coding_limits:
+            print(f"  {coding_limits}")
 
     # --- write artifacts ---
     json_path = args.out.with_suffix(".json")
@@ -129,6 +183,31 @@ def main():
         status = it.get("status", "")
         note = it.get("notes", "")
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
+        # Two distinct facts: what the code means, and what the bill called it.
+        code_name = it.get("code_name")
+        lines.append(f"    - Code means: {code_name}" if code_name
+                     else "    - Code means: _no description on file_")
+        if it.get("description_source") == "bill":
+            lines.append(f"    - Bill says: {it.get('description')}")
+    if coding_rows:
+        lines += ["", "## Does the code match the service?", "",
+                  "| Code | Status | What the code means | What the bill says | What we found |",
+                  "|---|---|---|---|---|"]
+        for row in coding_rows:
+            code_means = row.get("billed_name") or "_no description on file_"
+            bill_says = row.get("description") or "_not given_"
+            lines.append(
+                f"| `{row['cpt_code']}` | **{status_label(row)}** | {code_means} "
+                f"| {bill_says} | {plain_detail(row)} |"
+            )
+        lines += ["", coverage_summary(coding_rows), ""]
+        expl = coverage_explanation(coding_rows)
+        if expl:
+            lines += ["> " + " ".join(expl), ""]
+        for note in name_sources_legend(coding_rows):
+            lines.append(f"_{note}_")
+        lines += ["", f"> {coding_limits}", ""]
+
     lines += ["", "## Draft dispute letter", "", "```", str(report.get("dispute_letter", "")).strip(), "```", ""]
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

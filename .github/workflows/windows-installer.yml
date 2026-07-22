@@ -1,0 +1,146 @@
+name: Windows installer
+
+# Exercises install/setup_billaudit.bat on a real Windows runner.
+#
+# Covered: Python detection, pip install, ~\BillAudit creation, the curl
+# downloads, the generated run_audit.bat (its %% escaping is the most
+# breakage-prone part), and the verification audit.
+#
+# NOT covered: the Python-bootstrap branch (download + silent install), because
+# GitHub runners already ship Python so that branch never fires. That path still
+# needs one manual run on a clean Windows VM before the script goes to partners.
+
+on:
+  push:
+    paths:
+      - "install/**"
+      - ".github/workflows/windows-installer.yml"
+  pull_request:
+    paths:
+      - "install/**"
+      - ".github/workflows/windows-installer.yml"
+  workflow_dispatch:
+
+jobs:
+  run-installer:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The script fetches pilot_audit.py and the sample CSV from `main`. On a
+      # branch those files may not be on `main` yet, so point the copy under
+      # test at the current ref. The committed script is never modified.
+      - name: Stage script with branch-pinned download URLs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staged | Out-Null
+          $ref = "${{ github.head_ref || github.ref_name }}"
+          Write-Host "Pinning raw URLs to ref: $ref"
+          (Get-Content install/setup_billaudit.bat -Raw) `
+            -replace 'healthfraudml/main/examples', "healthfraudml/$ref/examples" `
+            | Set-Content staged/setup_billaudit.bat
+          Select-String -Path staged/setup_billaudit.bat -Pattern 'raw.githubusercontent'
+
+      # The installer pulls the package from PyPI, which lags this branch. Without
+      # this step CI would exercise the last published release rather than the code
+      # under review, and pass on behaviour this PR has already changed.
+      # Installing the checkout first means the installer's `pip install --upgrade`
+      # is a no-op (PyPI's version is older), so the script runs against this code.
+      # Install into BOTH interpreters: the script prefers `py`, which on these
+      # runners is a different interpreter from `python`. Installing into only
+      # one leaves the other to fall back to PyPI's older release.
+      - name: Pre-install the package from this checkout
+        shell: cmd
+        run: |
+          for %%p in (py python) do (
+            where %%p >nul 2>nul && (
+              echo === installing into %%p ===
+              %%p -m pip install --quiet --upgrade pip
+              %%p -m pip install --quiet ".[rag]" || exit /b 1
+              %%p -c "import healthfraudml; print('%%p under test:', healthfraudml.__version__)"
+            )
+          )
+
+      # `pause` waits on a keypress and would hang the runner; feeding stdin
+      # satisfies it without editing the script.
+      - name: Run the installer
+        id: installer
+        continue-on-error: true
+        shell: cmd
+        run: echo. | cmd /c staged\setup_billaudit.bat
+
+      # Informational only: records what the environment looked like, so a
+      # future failure has context. Never fails the job — the real assertions
+      # live in the verification step below.
+      - name: Environment snapshot
+        if: always()
+        continue-on-error: true
+        shell: cmd
+        run: |
+          cd /d "%USERPROFILE%\BillAudit"
+          echo --- folder contents ---
+          dir /b
+          echo --- python resolution ---
+          where py
+          where python
+          echo --- interpreter baked into the generated runner ---
+          findstr /C:"pilot_audit.py" run_audit.bat
+
+      - name: Verify the installer did what it claims
+        if: always()
+        shell: pwsh
+        run: |
+          $folder = Join-Path $env:USERPROFILE 'BillAudit'
+          $failed = $false
+
+          function Check($label, $condition) {
+            if ($condition) { Write-Host "PASS: $label" }
+            else { Write-Host "FAIL: $label"; $script:failed = $true }
+          }
+
+          Check "BillAudit folder created"      (Test-Path $folder)
+          Check "pilot_audit.py downloaded"     (Test-Path "$folder\pilot_audit.py")
+          Check "sample CSV downloaded"         (Test-Path "$folder\sample_claims_pilot.csv")
+          Check "run_audit.bat generated"       (Test-Path "$folder\run_audit.bat")
+          Check "verification report produced"  (Test-Path "$folder\setup_test.md")
+
+          if (Test-Path "$folder\setup_test.md") {
+            $report = Get-Content "$folder\setup_test.md" -Raw
+            Check "report contains findings section" ($report -match 'Findings')
+
+            # Behaviour assertions, not just "a file appeared". These catch the
+            # case where the installer silently runs an older published package
+            # than the code under review.
+            Check "uses 'review ceiling' wording"        ($report -match 'review ceiling')
+            Check "no stale 'fair market value' wording" ($report -notmatch 'Fair market value')
+            Check "includes the Medicare rate anchor"    ($report -match "Medicare's national payment")
+            Check "coding audit section present"         ($report -match 'Coding audit')
+          }
+
+          # The generated runner is the most escaping-sensitive part: run it
+          # against a fresh CSV and confirm it produces a report.
+          if (Test-Path "$folder\run_audit.bat") {
+            # G0009 billed but described as an influenza vaccination resolves to
+            # G0008 -> POSSIBLE MISCODING. That verdict is the only path that
+            # prints an arrow, which a cp1252 Windows console cannot encode.
+            # Exercise it deliberately so the crash cannot slip through on luck.
+            Set-Content "$folder\ci_case.csv" "cpt_code,amount,description`n70450,2400.00,CT head without contrast`nG0009,90.00,administration of influenza vaccine"
+            Push-Location $folder
+            cmd /c "echo. | run_audit.bat" | Out-Host
+            Pop-Location
+            Check "generated runner produced ci_case_report.md" (Test-Path "$folder\ci_case_report.md")
+          }
+
+          if ($failed) { throw "Windows installer verification failed" }
+          Write-Host "All installer checks passed."
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: billaudit-output
+          path: ~/BillAudit
+          if-no-files-found: ignore

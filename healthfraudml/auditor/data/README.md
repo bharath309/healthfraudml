@@ -1,3 +1,46 @@
+# Auditor reference data
+
+This directory holds two generated data files: `cms_pfs_benchmark.csv` (prices)
+and `code_names.csv` (plain-language names). Neither contains AMA CPT descriptors.
+
+---
+
+# code_names.csv — plain-language code names
+
+Columns: `code, plain_name, source` where `source` ∈ `cms_hcpcs_l2 | authored`.
+
+## Sources and the IP boundary
+
+| source | what it is | provenance |
+|---|---|---|
+| `cms_hcpcs_l2` | HCPCS **Level II** long descriptions | Public CMS quarterly alpha-numeric HCPCS file (2025 July release, `HCPC2025_JUL_ANWEB_v3.txt`). Maintained by CMS, public domain. |
+| `authored` | Short plain-language paraphrases for numeric CPT codes | Written by this project. **Not** AMA descriptors. Always displayed with an `(unofficial name)` suffix. |
+
+**Two exclusions are enforced in `scripts/build_code_names.py` and must not be removed:**
+
+1. **Numeric (Level I / CPT) rows are skipped.** CMS ships CPT long/short
+   descriptions inside the same file, but those descriptors are AMA-copyrighted.
+2. **D-series rows are skipped.** Per CMS's own record layout, Level II D-codes
+   carry ADA CDT copyright — the same class of restriction as CPT, despite being
+   letter-prefixed.
+
+A regression test asserts every `cms_hcpcs_l2` row is letter-prefixed and non-D.
+
+## Regenerating
+
+```bash
+# download the quarterly alpha-numeric HCPCS zip from CMS, unzip, then:
+python scripts/build_code_names.py HCPC2025_JUL_ANWEB_v3.txt \
+    --authored-csv scripts/authored_cpt_names.csv \
+    --out healthfraudml/auditor/data/code_names.csv
+```
+
+Growing the authored CPT list is a matter of adding rows to
+`scripts/authored_cpt_names.csv` and re-running the script. Every code that
+gains a name also becomes resolvable by the coding audit.
+
+---
+
 # CMS PFS price benchmark
 
 `cms_pfs_benchmark.csv` holds **CPT/HCPCS code numbers + national Medicare
@@ -24,12 +67,19 @@ uses the partner's own `description` column for display.
 | `cpt_code` | 5-char CPT/HCPCS code |
 | `medicare_min` | lower of facility / non-facility national payment |
 | `medicare_max` | higher of facility / non-facility national payment |
-| `fair_min` | = `medicare_max` (floor of the "fair" band) |
-| `fair_max` | **disclosed heuristic** dispute ceiling = `medicare_max` × 5.0 |
+| `fair_min` | = `medicare_max` (lower edge of the band) |
+| `fair_max` | **review ceiling** = `medicare_max` × 5.0 (disclosed heuristic) |
 
-`fair_max` is **not an official figure**. It is a heuristic threshold that flags
-charges far above Medicare for human review; a charge above it is a prompt to
-look, not proof of fraud. Tune the multiplier in `scripts/build_cms_benchmark.py`.
+`fair_max` is the **review ceiling**, not a legal maximum and not an official
+figure. It is a screening threshold that flags charges far above Medicare for
+human review; a charge above it is a prompt to look, not proof of fraud and not
+a statement about what is legally owed. Reports and letters therefore describe
+it as "review ceiling (5× Medicare rate)" and lead with the published Medicare
+national payment — a checkable fact — rather than any "fair market value" claim.
+
+The column keeps its `fair_max` name for backward compatibility with v0.2.0
+data files; only the user-facing wording changed. Tune the multiplier in
+`scripts/build_cms_benchmark.py`.
 
 ## Regenerating
 

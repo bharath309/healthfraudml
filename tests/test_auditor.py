@@ -23,8 +23,10 @@ def test_billing_auditor_upcoding(sample_bill_items):
     assert report["total_billed"] == 7381.00
     assert report["risk_level"] == "High"
 
-    # Savings should be 6672.0 - 1200.0 (fair_max for CPT 99283) = 5472.0
-    assert report["suggested_savings"] == 5472.0
+    # Savings = 6672.00 - 341.25 (CMS-derived review ceiling for 99283).
+    # Was 5472.00 while hand-written prices overrode CMS; see
+    # docs/medicare_benchmark_design.md.
+    assert report["suggested_savings"] == 6330.75
 
     findings_types = [f["type"] for f in report["findings"]]
     assert "Upcoding" in findings_types
@@ -57,13 +59,106 @@ def test_expanded_benchmark_flags_overpricing_without_severity():
     assert report["audited_items"][0]["status"] == "Overpriced"
 
 
+def test_unbundling_not_triggered_by_diagnostics():
+    """Regression: E/M + imaging must NOT flag unbundling (v0.3.0 fix).
+
+    Bundling rules concern minor surgical procedures with a global period,
+    not diagnostics like a chest X-ray.
+    """
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "99213", "amount": 210.00, "description": "Office visit"},
+        {"cpt_code": "71046", "amount": 120.00, "description": "Chest X-ray 2 views"},
+    ])
+    assert "Unbundling" not in [f["type"] for f in report["findings"]]
+
+
+def test_unbundling_preserved_for_curated_procedure():
+    """Regression: E/M + curated minor surgical procedure still flags unbundling."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])
+    types = [f["type"] for f in report["findings"]]
+    assert "Unbundling" in types
+    assert "Upcoding" in types
+    assert report["suggested_savings"] == 6330.75
+
+
+def test_letter_asserts_only_present_findings():
+    """A bill with only an overpricing issue must not allege coding violations."""
+    auditor = BillingAuditor(provider_name="Imaging Center")
+    report = auditor.audit_bill([
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])
+    letter = report["dispute_letter"]
+    assert "Overpricing" in [f["type"] for f in report["findings"]]
+    # No E/M, upcoding or unbundling language on a single imaging line.
+    for phrase in ["99285", "upcoding", "Evaluation and Management", "bundled"]:
+        assert phrase not in letter, f"letter should not mention {phrase!r}"
+    assert "one item was identified" in letter
+
+
+def test_letter_includes_rules_when_findings_present():
+    """Coding-rule paragraphs appear only when the matching finding was raised."""
+    auditor = BillingAuditor(provider_name="Example Hospital")
+    letter = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])["dispute_letter"]
+    assert "Evaluation and Management" in letter
+    assert "CPT 99285" in letter
+
+
+def test_letter_makes_no_regulatory_compliance_claim():
+    """No statutory/regulatory assertions ship without the counsel-review gate."""
+    auditor = BillingAuditor(provider_name="Example Hospital")
+    letter = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ])["dispute_letter"]
+    for claim in ["NCCI", "National Correct Coding", "does not comply", "501(r)",
+                  "No Surprises", "violation", "unlawful", "illegal"]:
+        assert claim not in letter, f"letter must not assert {claim!r} before counsel review"
+
+
+def test_code_names_loaded_and_labelled():
+    """HCPCS Level II names are shown as-is; authored CPT names are marked."""
+    assert len(BillingAuditor.CODE_NAMES) > 1000
+    l2 = BillingAuditor.code_name("G0008")
+    assert l2 and "unofficial" not in l2
+    authored = BillingAuditor.code_name("99285")
+    assert authored and authored.endswith("(unofficial name)")
+    # No AMA CPT descriptors: numeric codes never come from the HCPCS file.
+    for code, entry in BillingAuditor.CODE_NAMES.items():
+        if entry["source"] == "cms_hcpcs_l2":
+            assert code[0].isalpha() and code[0].upper() != "D"
+
+
+def test_description_display_order():
+    """Partner description wins; otherwise fall back to a name, else say so."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "G0008", "amount": 50.0, "description": "Partner's own wording"},
+        {"cpt_code": "G0008", "amount": 50.0},
+        {"cpt_code": "ZZZZZ", "amount": 50.0},
+    ])
+    items = report["audited_items"]
+    assert items[0]["description"] == "Partner's own wording"
+    assert "influenza" in items[1]["description"].lower()
+    assert items[2]["description"] == "no description available"
+
+
 def test_unknown_code_bypasses_benchmark_not_dropped():
     auditor = BillingAuditor(provider_name="Clinic")
     report = auditor.audit_bill([
         {"cpt_code": "0000X", "amount": 500.00, "description": "Unlisted proprietary"},
     ])
+    item = report["audited_items"][0]
     assert len(report["audited_items"]) == 1
-    assert "bypassed price benchmarking" in report["audited_items"][0]["notes"]
+    assert "not benchmarked" in item["notes"]
+    assert item["status"] == "Not price-checked"
 
 
 def test_billing_auditor_overpricing_only():
@@ -74,8 +169,8 @@ def test_billing_auditor_overpricing_only():
     report = auditor.audit_bill(items)
 
     assert report["risk_level"] == "Medium"  # Overpricing only
-    # CPT 99214 fair_max is 450.0. Savings should be 900.0 - 450.0 = 450.0
-    assert report["suggested_savings"] == 450.0
+    # 99214 review ceiling is 5 x CMS 125.18 = 625.90; 900.00 - 625.90 = 274.10
+    assert report["suggested_savings"] == 274.10
     
     findings_types = [f["type"] for f in report["findings"]]
     assert "Overpricing" in findings_types
@@ -83,7 +178,8 @@ def test_billing_auditor_overpricing_only():
 
 def test_billing_auditor_clear():
     items = [
-        {"cpt_code": "99282", "amount": 250.00, "description": "Low Severity ED Visit"}
+        # 99282 review ceiling is 5 x CMS 40.43 = 202.15, so stay under it.
+        {"cpt_code": "99282", "amount": 150.00, "description": "Low Severity ED Visit"}
     ]
     auditor = BillingAuditor(provider_name="Community Clinic")
     report = auditor.audit_bill(items)
@@ -141,3 +237,220 @@ def test_llm_bill_parser_pdf_extraction(tmp_path):
     assert "Example Health System" in extracted_text
     assert "56420" in extracted_text
     assert "99285" in extracted_text
+
+
+def test_unbenchmarked_line_is_not_reported_as_clear():
+    """A line we never price-checked must not read as having passed a check."""
+    auditor = BillingAuditor(provider_name="Lab")
+    report = auditor.audit_bill([
+        {"cpt_code": "80053", "amount": 340.00, "description": "Comprehensive metabolic panel"},
+    ])
+    item = report["audited_items"][0]
+    assert item["status"] == "Not price-checked"
+    assert item["status"] != "Clear"
+    assert "not benchmarked" in item["notes"]
+
+
+def test_hcpcs_codes_are_not_called_cpt():
+    """J- and G-codes are HCPCS Level II; calling them CPT discredits the letter."""
+    assert BillingAuditor.code_system("J1885") == "HCPCS"
+    assert BillingAuditor.code_system("G0009") == "HCPCS"
+    assert BillingAuditor.code_system("99285") == "CPT"
+
+    auditor = BillingAuditor(provider_name="Clinic")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "J1885", "amount": 180.00, "description": "Ketorolac injection"},
+    ])
+    letter = report["dispute_letter"]
+    assert "CPT J1885" not in letter
+    assert "HCPCS J1885" in letter
+
+
+def test_letter_states_code_meaning_not_the_bills_claim():
+    """A miscoded line must not have its error repeated back in our letter."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    letter = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+    ])["dispute_letter"] or ""
+    # No findings on this bill, so no letter is generated; assert via the item.
+    report = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])
+    letter = report["dispute_letter"]
+    # The code's actual meaning is stated...
+    assert "Administration of pneumococcal vaccine" in letter
+    # ...and the bill's differing wording is quoted, not asserted as the meaning.
+    assert 'described on the bill as: "administration of influenza vaccine"' in letter
+
+
+def test_audited_item_carries_code_meaning_separate_from_bill_wording():
+    """Two distinct facts per line: what the code means, what the bill called it."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    item = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+    ])["audited_items"][0]
+    assert item["description"] == "administration of influenza vaccine"   # bill's claim
+    assert item["description_source"] == "bill"
+    assert item["code_name"] == "Administration of pneumococcal vaccine"  # code's meaning
+    assert item["code_name_source"] == "cms_hcpcs_l2"
+
+
+def test_code_meaning_is_none_when_unknown():
+    auditor = BillingAuditor(provider_name="Clinic")
+    item = auditor.audit_bill([
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])["audited_items"][0]
+    assert item["code_name"] is None
+    assert item["code_name_source"] is None
+
+
+def test_prices_come_from_cms_not_handwritten():
+    """Curated built-ins supply metadata only; CMS supplies every price."""
+    for meta in BillingAuditor._BUILTIN_CPT_REFERENCE.values():
+        assert "medicare_max" not in meta and "fair_max" not in meta
+    ref = BillingAuditor.CPT_REFERENCE["99285"]
+    assert ref["medicare_max"] == 168.85          # CMS 2025: 5.22 RVU x 32.3465
+    assert ref["fair_max"] == 844.25              # 5x CMS
+    assert ref["severity"] == 5                   # metadata still applied
+
+
+def test_diagnostics_do_not_erase_an_upcoding_flag():
+    """Regression: adding an X-ray must not suppress a real upcoding finding."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    base = [
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ]
+    assert "Upcoding" in [f["type"] for f in auditor.audit_bill(base)["findings"]]
+    with_xray = base + [{"cpt_code": "71046", "amount": 890.00, "description": "Chest X-ray"}]
+    types = [f["type"] for f in auditor.audit_bill(with_xray)["findings"]]
+    assert "Upcoding" in types, "unclassified diagnostics must be ignored, not block the check"
+
+
+def test_coding_audit_reaches_the_letter_as_a_question():
+    """A possible miscoding is requested for confirmation, never alleged."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    coding = [{"cpt_code": "G0009", "verdict": "POSSIBLE MISCODING",
+               "description": "administration of influenza vaccine",
+               "resolved_code": "G0008"}]
+    letter = auditor.audit_bill(
+        [{"cpt_code": "G0009", "amount": 90.00,
+          "description": "administration of influenza vaccine"},
+         {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"}],
+        coding_audit=coding,
+    )["dispute_letter"]
+    assert "Confirmation of the service billed under HCPCS G0009" in letter
+    for accusation in ["miscoded", "wrong code", "incorrect code"]:
+        assert accusation not in letter.lower()
+
+
+def test_uncoded_charge_is_reported_never_inferred():
+    """A charge with no code becomes a finding; the code is never guessed."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Level 5 W/Proc"},
+        {"cpt_code": "", "amount": 709.00, "description": "ED Proc Minor"},
+    ])
+    uncoded = report["audited_items"][1]
+    assert uncoded["status"] == "No code disclosed"
+    assert uncoded["cpt_code"] == ""          # never filled in
+    types = [f["type"] for f in report["findings"]]
+    assert "Missing Code" in types
+    # An uncoded line cannot support a severity-based finding.
+    assert "Upcoding" not in types and "Unbundling" not in types
+    # And it contributes no claimed saving - we cannot value what we cannot identify.
+    finding = next(f for f in report["findings"] if f["type"] == "Missing Code")
+    assert "709.00" in finding["message"] and "Request an itemised bill" in finding["message"]
+
+
+def test_uncoded_charge_alone_still_raises_risk():
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "", "amount": 709.00, "description": "ED Proc Minor"},
+    ])
+    assert report["risk_level"] == "Medium"
+    assert "Missing Code" in [f["type"] for f in report["findings"]]
+    assert "itemised statement showing the CPT or HCPCS code" in report["dispute_letter"]
+
+
+def test_patient_header_is_never_taken_as_the_provider():
+    """Regression: a patient name must not end up addressed in the letter.
+
+    The old pattern let \\s+ span newlines, so a patient header line followed by
+    a line containing "Hospital" was captured as the provider and then written
+    into the outbound dispute letter three times.
+    """
+    parser = LLMBillParser(api_key=None)
+    text = (
+        "Name: Jane Doe | DOB: 1/1/1990 | Legal Name: Jane Doe\n"
+        "Hospital\n"
+        "ED Level 5 W/Proc - 99285 (CPT) $6,672.00\n"
+    )
+    data = parser.parse_bill_text(text)
+    assert "Jane Doe" not in data["provider_name"]
+    assert data["provider_name"] == LLMBillParser.PROVIDER_PLACEHOLDER
+    assert data["provider_name_source"] == "not_found"
+
+
+def test_real_provider_line_is_still_parsed():
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Example Health System Hospital Bill Details:\n"
+        "ED Proc Minor CPT 56420: $709.00\n"
+    )
+    assert "Example Health System" in data["provider_name"]
+    assert data["provider_name_source"] == "parsed"
+
+
+def test_parser_reads_any_code_not_a_hardcoded_list():
+    """The old parser recognised only 10 codes; real bills carry anything."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Compr Met Pnl - 80053 (CPT) $471.00\n"
+        "Venipuncture - 36415 (CPT) $50.00\n"
+        "Lidocaine - J2003 (HCPCS) $75.00\n"
+    )
+    codes = [i["cpt_code"] for i in data["items"]]
+    assert codes == ["80053", "36415", "J2003"]
+    assert data["items"][0]["description"] == "Compr Met Pnl"
+
+
+def test_parser_never_infers_a_code_from_wording():
+    """Regression: 'minor' used to become 56420 and 'level 5' 99285."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text("ED Proc Minor $709.00\nLevel 5 visit $6,672.00\n")
+    for item in data["items"]:
+        assert item["cpt_code"] == "", "codes must never be inferred from wording"
+    assert {i["amount"] for i in data["items"]} == {709.00, 6672.00}
+
+
+def test_parser_drops_nested_subtotals_and_credits():
+    """Section and grand totals must not be counted as charges."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Billed $8,234.00\n"
+        "Emergency Room $7,381.00\n"
+        "ED Proc Minor $709.00\n"
+        "ED Level 5 W/Proc - 99285 (CPT) $6,672.00\n"
+        "Laboratory $853.00\n"
+        "Compr Met Pnl - 80053 (CPT) $471.00\n"
+        "Cbc - 85025 (CPT) $332.00\n"
+        "Lorazepam $50.00\n"
+        "Insurance covered -$1,564.46\n"
+    )
+    total = sum(i["amount"] for i in data["items"])
+    assert abs(total - 8234.00) < 0.01, f"expected the stated total, got {total}"
+    assert all(i["amount"] > 0 for i in data["items"])
+
+
+def test_parser_takes_amount_from_the_following_line():
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text("Cbc Automated - 85025\n$217.00\n")
+    assert len(data["items"]) == 1
+    assert data["items"][0]["cpt_code"] == "85025"
+    assert data["items"][0]["amount"] == 217.00
