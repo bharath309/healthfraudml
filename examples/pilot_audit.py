@@ -93,7 +93,6 @@ def main():
     print(f"Loaded {len(items)} claim lines from {args.csv_file}")
 
     auditor = BillingAuditor(provider_name=args.provider)
-    report = auditor.audit_bill(items)
 
     # --- coding audit: is the code right for the described service? ---
     coding_rows = []
@@ -111,6 +110,8 @@ def main():
                 print("\nCoding audit not available — install healthfraudml[rag] to enable it.")
         except Exception as exc:  # never let the coding audit break the price audit
             print(f"\nCoding audit skipped ({exc.__class__.__name__}: {exc}).")
+    # Coding results are computed first so the dispute letter can carry them.
+    report = auditor.audit_bill(items, coding_audit=coding_rows)
     report["coding_audit"] = coding_rows
 
     # --- console summary ---

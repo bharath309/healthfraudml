@@ -81,94 +81,31 @@ class BillingAuditor:
     # (description + severity) used by the upcoding/unbundling logic.
     # Columns: CPT code -> {description, medicare_min, medicare_max, fair_min, fair_max, severity}
     # Severity ranges from 1 (minor) to 5 (critical/severe)
+    # Curated metadata ONLY. Prices come from the CMS benchmark - hand-written
+    # dollar values used to live here and silently overrode verified CMS data,
+    # so the letter quoted figures CMS does not publish while inviting the
+    # reader to verify them against CMS.
     _BUILTIN_CPT_REFERENCE = {
-        "99285": {
-            "description": "Emergency Department Visit, Level 5 (High Severity/Complexity)",
-            "medicare_min": 150.0,
-            "medicare_max": 250.0,
-            "fair_min": 1500.0,
-            "fair_max": 3500.0,
-            "severity": 5,
-        },
-        "99284": {
-            "description": "Emergency Department Visit, Level 4 (High/Moderate Severity)",
-            "medicare_min": 120.0,
-            "medicare_max": 180.0,
-            "fair_min": 1000.0,
-            "fair_max": 2200.0,
-            "severity": 4,
-        },
-        "99283": {
-            "description": "Emergency Department Visit, Level 3 (Moderate Severity)",
-            "medicare_min": 80.0,
-            "medicare_max": 120.0,
-            "fair_min": 500.0,
-            "fair_max": 1200.0,
-            "severity": 3,
-        },
-        "99282": {
-            "description": "Emergency Department Visit, Level 2 (Low/Moderate Severity)",
-            "medicare_min": 50.0,
-            "medicare_max": 80.0,
-            "fair_min": 300.0,
-            "fair_max": 700.0,
-            "severity": 2,
-        },
-        "99281": {
-            "description": "Emergency Department Visit, Level 1 (Low Severity)",
-            "medicare_min": 30.0,
-            "medicare_max": 50.0,
-            "fair_min": 150.0,
-            "fair_max": 400.0,
-            "severity": 1,
-        },
-        "56420": {
-            "description": "Incision and Drainage of Bartholin's Gland Abscess/Cyst",
-            "medicare_min": 115.0,
-            "medicare_max": 200.0,
-            "fair_min": 400.0,
-            "fair_max": 1200.0,
-            "severity": 2,
-        },
-        "12001": {
-            "description": "Simple Repair of Superficial Wound (2.5 cm or less)",
-            "medicare_min": 80.0,
-            "medicare_max": 130.0,
-            "fair_min": 300.0,
-            "fair_max": 800.0,
-            "severity": 1,
-        },
-        "12002": {
-            "description": "Simple Repair of Superficial Wound (2.6 cm to 7.5 cm)",
-            "medicare_min": 100.0,
-            "medicare_max": 160.0,
-            "fair_min": 400.0,
-            "fair_max": 1000.0,
-            "severity": 2,
-        },
-        "99214": {
-            "description": "Office/Outpatient Visit, Established Patient, 30-39 minutes",
-            "medicare_min": 100.0,
-            "medicare_max": 140.0,
-            "fair_min": 200.0,
-            "fair_max": 450.0,
-            "severity": 3,
-        },
-        "99215": {
-            "description": "Office/Outpatient Visit, Established Patient, 40-54 minutes",
-            "medicare_min": 150.0,
-            "medicare_max": 200.0,
-            "fair_min": 300.0,
-            "fair_max": 600.0,
-            "severity": 4,
-        },
+        "99285": {"description": "Emergency Department Visit, Level 5 (High Severity/Complexity)", "severity": 5},
+        "99284": {"description": "Emergency Department Visit, Level 4 (High/Moderate Severity)", "severity": 4},
+        "99283": {"description": "Emergency Department Visit, Level 3 (Moderate Severity)", "severity": 3},
+        "99282": {"description": "Emergency Department Visit, Level 2 (Low/Moderate Severity)", "severity": 2},
+        "99281": {"description": "Emergency Department Visit, Level 1 (Low Severity)", "severity": 1},
+        "56420": {"description": "Incision and Drainage of Bartholin's Gland Abscess/Cyst", "severity": 2},
+        "12001": {"description": "Simple Repair of Superficial Wound (2.5 cm or less)", "severity": 1},
+        "12002": {"description": "Simple Repair of Superficial Wound (2.6 cm to 7.5 cm)", "severity": 2},
+        "99214": {"description": "Office/Outpatient Visit, Established Patient, 30-39 minutes", "severity": 3},
+        "99215": {"description": "Office/Outpatient Visit, Established Patient, 40-54 minutes", "severity": 4},
     }
 
     # Full reference = CMS price benchmark (thousands of codes, price-only)
     # overlaid by the curated built-ins (which win, and add description +
     # severity). Price-only entries get benchmarking but never trigger
     # severity-based upcoding.
-    CPT_REFERENCE = {**_load_cms_benchmark(), **_BUILTIN_CPT_REFERENCE}
+    CPT_REFERENCE = {code: dict(entry) for code, entry in _load_cms_benchmark().items()}
+    for _code, _meta in _BUILTIN_CPT_REFERENCE.items():
+        CPT_REFERENCE.setdefault(_code, {}).update(_meta)
+    del _code, _meta
 
     # code -> {"plain_name", "source"}; see _load_code_names().
     CODE_NAMES = _load_code_names()
@@ -223,7 +160,8 @@ class BillingAuditor:
         self.provider_name = provider_name
         self.db = db
 
-    def audit_bill(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def audit_bill(self, items: List[Dict[str, Any]],
+                   coding_audit: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
         Audit a list of billed items.
 
@@ -357,12 +295,15 @@ class BillingAuditor:
             em_severity = em_ref.get("severity")
             # If it's a high-severity visit (Level 5 or Level 4)
             if em_severity is not None and em_severity >= 4:
-                # Check if all other procedures are known-low severity (<= 2).
-                # Unknown (None) severity blocks the flag rather than assuming minor.
-                if procedure_items and all(
-                    (p_ref.get("severity") is not None and p_ref.get("severity") <= 2)
-                    for _, _, p_ref, _ in procedure_items
-                ):
+                # Judge the visit level against procedures we can actually
+                # classify. Lines of unknown severity (imaging, labs, supplies)
+                # are IGNORED, not treated as blockers - otherwise adding a
+                # chest X-ray to a bill erases a real upcoding flag.
+                classified = [
+                    p_ref for _, _, p_ref, _ in procedure_items
+                    if p_ref.get("severity") is not None
+                ]
+                if classified and all(p_ref["severity"] <= 2 for p_ref in classified):
                     has_upcoding = True
                     # Find a suggested lower E/M code (e.g. Level 3)
                     suggested_cpt = "99283" if em_cpt.startswith("9928") else "99214"
@@ -459,7 +400,9 @@ class BillingAuditor:
         # Generate dispute letter if issues found
         dispute_letter = ""
         if risk_level != "Low":
-            dispute_letter = self._generate_dispute_letter(items, audited_items, findings, total_billed, suggested_savings)
+            dispute_letter = self._generate_dispute_letter(
+                items, audited_items, findings, total_billed, suggested_savings,
+                coding_audit or [])
 
         return {
             "provider_name": self.provider_name,
@@ -478,6 +421,7 @@ class BillingAuditor:
         findings: List[Dict[str, Any]],
         total_billed: float,
         suggested_savings: float,
+        coding_audit: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Helper to generate a formatted dispute letter."""
         findings_bullets = ""
@@ -572,6 +516,19 @@ class BillingAuditor:
             )
         if not requests:
             requests.append("An itemized review of the charges identified above.")
+        # Coding-audit hits are questions, never allegations: we ask the biller
+        # to confirm the code, we do not assert it is wrong.
+        for row in (coding_audit or []):
+            if row.get("verdict") != "POSSIBLE MISCODING":
+                continue
+            code = row.get("cpt_code", "")
+            said = (row.get("description") or "").strip()
+            requests.append(
+                f"Confirmation of the service billed under "
+                f"{self.code_system(code)} {code}"
+                + (f', which this bill describes as "{said}"' if said else "")
+                + "."
+            )
         requests_block = "".join(f"- {r}\n" for r in requests)
 
         count = len(findings)

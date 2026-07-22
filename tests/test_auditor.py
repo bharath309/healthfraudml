@@ -23,8 +23,10 @@ def test_billing_auditor_upcoding(sample_bill_items):
     assert report["total_billed"] == 7381.00
     assert report["risk_level"] == "High"
 
-    # Savings should be 6672.0 - 1200.0 (fair_max for CPT 99283) = 5472.0
-    assert report["suggested_savings"] == 5472.0
+    # Savings = 6672.00 - 341.25 (CMS-derived review ceiling for 99283).
+    # Was 5472.00 while hand-written prices overrode CMS; see
+    # docs/medicare_benchmark_design.md.
+    assert report["suggested_savings"] == 6330.75
 
     findings_types = [f["type"] for f in report["findings"]]
     assert "Upcoding" in findings_types
@@ -81,7 +83,7 @@ def test_unbundling_preserved_for_curated_procedure():
     types = [f["type"] for f in report["findings"]]
     assert "Unbundling" in types
     assert "Upcoding" in types
-    assert report["suggested_savings"] == 5472.0
+    assert report["suggested_savings"] == 6330.75
 
 
 def test_letter_asserts_only_present_findings():
@@ -167,8 +169,8 @@ def test_billing_auditor_overpricing_only():
     report = auditor.audit_bill(items)
 
     assert report["risk_level"] == "Medium"  # Overpricing only
-    # CPT 99214 fair_max is 450.0. Savings should be 900.0 - 450.0 = 450.0
-    assert report["suggested_savings"] == 450.0
+    # 99214 review ceiling is 5 x CMS 125.18 = 625.90; 900.00 - 625.90 = 274.10
+    assert report["suggested_savings"] == 274.10
     
     findings_types = [f["type"] for f in report["findings"]]
     assert "Overpricing" in findings_types
@@ -176,7 +178,8 @@ def test_billing_auditor_overpricing_only():
 
 def test_billing_auditor_clear():
     items = [
-        {"cpt_code": "99282", "amount": 250.00, "description": "Low Severity ED Visit"}
+        # 99282 review ceiling is 5 x CMS 40.43 = 202.15, so stay under it.
+        {"cpt_code": "99282", "amount": 150.00, "description": "Low Severity ED Visit"}
     ]
     auditor = BillingAuditor(provider_name="Community Clinic")
     report = auditor.audit_bill(items)
@@ -304,3 +307,43 @@ def test_code_meaning_is_none_when_unknown():
     ])["audited_items"][0]
     assert item["code_name"] is None
     assert item["code_name_source"] is None
+
+
+def test_prices_come_from_cms_not_handwritten():
+    """Curated built-ins supply metadata only; CMS supplies every price."""
+    for meta in BillingAuditor._BUILTIN_CPT_REFERENCE.values():
+        assert "medicare_max" not in meta and "fair_max" not in meta
+    ref = BillingAuditor.CPT_REFERENCE["99285"]
+    assert ref["medicare_max"] == 168.85          # CMS 2025: 5.22 RVU x 32.3465
+    assert ref["fair_max"] == 844.25              # 5x CMS
+    assert ref["severity"] == 5                   # metadata still applied
+
+
+def test_diagnostics_do_not_erase_an_upcoding_flag():
+    """Regression: adding an X-ray must not suppress a real upcoding finding."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    base = [
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Visit Level 5"},
+        {"cpt_code": "56420", "amount": 709.00, "description": "Bartholin Cyst I&D"},
+    ]
+    assert "Upcoding" in [f["type"] for f in auditor.audit_bill(base)["findings"]]
+    with_xray = base + [{"cpt_code": "71046", "amount": 890.00, "description": "Chest X-ray"}]
+    types = [f["type"] for f in auditor.audit_bill(with_xray)["findings"]]
+    assert "Upcoding" in types, "unclassified diagnostics must be ignored, not block the check"
+
+
+def test_coding_audit_reaches_the_letter_as_a_question():
+    """A possible miscoding is requested for confirmation, never alleged."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    coding = [{"cpt_code": "G0009", "verdict": "POSSIBLE MISCODING",
+               "description": "administration of influenza vaccine",
+               "resolved_code": "G0008"}]
+    letter = auditor.audit_bill(
+        [{"cpt_code": "G0009", "amount": 90.00,
+          "description": "administration of influenza vaccine"},
+         {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"}],
+        coding_audit=coding,
+    )["dispute_letter"]
+    assert "Confirmation of the service billed under HCPCS G0009" in letter
+    for accusation in ["miscoded", "wrong code", "incorrect code"]:
+        assert accusation not in letter.lower()
