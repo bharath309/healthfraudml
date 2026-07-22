@@ -26,7 +26,7 @@ report = auditor.audit_bill([
 ])
 
 print(f"Risk Level: {report['risk_level']}")           # "High"
-print(f"Potential Savings: ${report['suggested_savings']:.2f}")  # "$5,472.00"
+print(f"Potential Savings: ${report['suggested_savings']:.2f}")  # "$6330.75"
 print(report['dispute_letter'])                         # Ready-to-send dispute letter
 ```
 

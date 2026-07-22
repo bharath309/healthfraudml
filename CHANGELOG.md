@@ -36,6 +36,37 @@ for this service?"
   legally owed.
 
 ### Fixed
+- **CMS is now the only source of prices.** The 10 curated codes carried
+  hand-written Medicare figures that silently overrode the CMS benchmark, so the
+  letter quoted amounts CMS does not publish while inviting the reader to verify
+  them against CMS. Built-ins now supply description and severity only.
+  **This re-baselines reported figures** — e.g. 99285 Medicare $250.00 → $168.85,
+  review ceiling $3,500.00 → $844.25, and the headline demo savings $5,472.00 →
+  $6,330.75. See `docs/medicare_benchmark_design.md`.
+- **Unclassified lines no longer erase an upcoding finding.** Any line the tool
+  could not classify (imaging, labs, supplies) was treated as a blocker, so
+  adding a chest X-ray to a bill suppressed a real upcoding flag. Such lines are
+  now ignored by that check rather than counted against it.
+- **Coding-audit results reach the dispute letter.** Previously the most
+  actionable item on a bill was absent from the document sent to the provider.
+  It appears as a request to confirm the service billed — a question, never an
+  allegation of miscoding.
+- **Preventive visits are no longer treated as level-based E/M.** Codes
+  99381–99397 share the 993xx prefix but are selected by patient age and
+  new/established status, so telling a reader they "depend on the doctor's notes"
+  was incorrect.
+- **Lines with no Medicare rate no longer report as "Clear".** Labs, drugs and
+  supplies are paid under separate CMS fee schedules; they now report
+  "Not price-checked" rather than implying they passed a check.
+- **HCPCS Level II codes are no longer labelled "CPT"** in findings or the letter.
+
+### Known limitation
+- The benchmark holds the **professional** component only. For facility-based
+  services (e.g. hospital emergency visits) the facility payment is made under
+  OPPS and is not included, so a multiple computed against a facility charge
+  overstates the gap. Documented in `docs/medicare_benchmark_design.md`; not yet
+  fixed.
+
 - **The dispute letter no longer alleges issues a bill does not have.** Coding-rule
   paragraphs and the requests that follow were hardcoded, so a bill with only an
   overpricing finding still received text about E/M bundling and a specific visit
