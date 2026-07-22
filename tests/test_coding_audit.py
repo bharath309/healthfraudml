@@ -118,3 +118,21 @@ def test_no_licensing_note_when_all_codes_are_level_two(auditor):
         {"cpt_code": "G0008", "description": "administration of influenza vaccine"},
     ])
     assert coverage_explanation(rows) == []
+
+
+def test_preventive_visits_are_not_level_based_em(auditor):
+    """99381-99397 are selected by age and new/established, not by MDM or time."""
+    from healthfraudml.auditor.coding_audit import is_preventive_medicine_code
+    for code in ["99381", "99385", "99387", "99391", "99397"]:
+        assert is_preventive_medicine_code(code)
+        assert not is_em_code(code), f"{code} is preventive, not level-based E/M"
+    # level-based E/M still detected
+    for code in ["99212", "99214", "99285", "99213"]:
+        assert is_em_code(code)
+        assert not is_preventive_medicine_code(code)
+
+
+def test_preventive_visit_does_not_claim_it_needs_the_notes(auditor):
+    result = auditor.audit_line("99385", "Prev Visit New Pt Age 18-39")
+    assert result["verdict"] != NOT_VALIDATABLE_EM
+    assert "doctor's notes" not in (result["note"] or "")

@@ -61,9 +61,28 @@ def _default_index_dir() -> str:
     )
 
 
-def is_em_code(code: str) -> bool:
-    """True for Evaluation & Management codes (level not validatable here)."""
+def is_preventive_medicine_code(code: str) -> bool:
+    """True for preventive-medicine visits (99381-99397).
+
+    These share the 993xx prefix with level-based E/M but are selected by the
+    patient's AGE and whether they are new or established - not by medical
+    decision making or time. Telling a reader such a line "depends on the
+    doctor's notes" is simply wrong.
+    """
     code = str(code).strip()
+    return code.isdigit() and 99381 <= int(code) <= 99397
+
+
+def is_em_code(code: str) -> bool:
+    """True for level-based Evaluation & Management codes.
+
+    Level selection for these rests on medical decision making or total time,
+    both of which live in the encounter documentation rather than on the bill.
+    Preventive-medicine visits are deliberately excluded - see above.
+    """
+    code = str(code).strip()
+    if is_preventive_medicine_code(code):
+        return False
     return code.startswith(_EM_PREFIXES)
 
 
