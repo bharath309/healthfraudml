@@ -195,6 +195,7 @@ class BillingAuditor:
         has_upcoding = False
         has_unbundling = False
         has_overpricing = False
+        has_missing_code = False
         total_billed = sum(float(item.get("amount", 0.0)) for item in items)
         
         # Track savings per index to prevent double counting
@@ -256,6 +257,19 @@ class BillingAuditor:
                 "fair_max_ref": ref["fair_max"] if ref else None,
                 "medicare_max_ref": ref.get("medicare_max") if ref else None,
             }
+
+            if not cpt:
+                # A charge with no code cannot be checked at all, and we never
+                # infer one: guessing a code manufactures findings out of thin
+                # air. Undisclosed codes are themselves worth questioning.
+                audit_entry["status"] = "No code disclosed"
+                audit_entry["notes"] = (
+                    "This charge has no procedure code shown on the bill, so it "
+                    "cannot be checked against any price benchmark."
+                )
+                has_missing_code = True
+                audited_items.append(audit_entry)
+                continue
 
             if ref:
                 # Check for extreme pricing against the review ceiling. This is a
@@ -387,12 +401,31 @@ class BillingAuditor:
                         )
                     })
 
+        # Undisclosed codes: report the charges, ask for the codes. No amount is
+        # claimed as a saving - we cannot value what we cannot identify.
+        if has_missing_code:
+            uncoded = [i for i in audited_items if i["status"] == "No code disclosed"]
+            total_uncoded = sum(i["billed_amount"] for i in uncoded)
+            listed = ", ".join(
+                f"{i['description']} (${i['billed_amount']:,.2f})" for i in uncoded
+            )
+            findings.append({
+                "type": "Missing Code",
+                "severity": "Medium",
+                "message": (
+                    f"{len(uncoded)} charge(s) totalling ${total_uncoded:,.2f} carry no "
+                    f"procedure code on the bill: {listed}. Without a code these cannot "
+                    "be priced or checked. Request an itemised bill showing the CPT/HCPCS "
+                    "code for each charge."
+                ),
+            })
+
         suggested_savings = sum(item_savings)
 
         # Calculate final overall risk level
         if has_upcoding or (has_overpricing and suggested_savings > 1000):
             risk_level = "High"
-        elif has_unbundling or has_overpricing:
+        elif has_unbundling or has_overpricing or has_missing_code:
             risk_level = "Medium"
         else:
             risk_level = "Low"
@@ -509,6 +542,11 @@ class BillingAuditor:
             )
         if "Unbundling" in finding_types:
             requests.append("Review of same-day charges that may be bundled.")
+        if "Missing Code" in finding_types:
+            requests.append(
+                "An itemised statement showing the CPT or HCPCS code for every "
+                "charge, including those currently listed without one."
+            )
         if "Overpricing" in finding_types:
             requests.append(
                 "Review of charges that sit far above the published Medicare "

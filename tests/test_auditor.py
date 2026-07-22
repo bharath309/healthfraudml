@@ -347,3 +347,32 @@ def test_coding_audit_reaches_the_letter_as_a_question():
     assert "Confirmation of the service billed under HCPCS G0009" in letter
     for accusation in ["miscoded", "wrong code", "incorrect code"]:
         assert accusation not in letter.lower()
+
+
+def test_uncoded_charge_is_reported_never_inferred():
+    """A charge with no code becomes a finding; the code is never guessed."""
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "99285", "amount": 6672.00, "description": "ED Level 5 W/Proc"},
+        {"cpt_code": "", "amount": 709.00, "description": "ED Proc Minor"},
+    ])
+    uncoded = report["audited_items"][1]
+    assert uncoded["status"] == "No code disclosed"
+    assert uncoded["cpt_code"] == ""          # never filled in
+    types = [f["type"] for f in report["findings"]]
+    assert "Missing Code" in types
+    # An uncoded line cannot support a severity-based finding.
+    assert "Upcoding" not in types and "Unbundling" not in types
+    # And it contributes no claimed saving - we cannot value what we cannot identify.
+    finding = next(f for f in report["findings"] if f["type"] == "Missing Code")
+    assert "709.00" in finding["message"] and "Request an itemised bill" in finding["message"]
+
+
+def test_uncoded_charge_alone_still_raises_risk():
+    auditor = BillingAuditor(provider_name="Hospital")
+    report = auditor.audit_bill([
+        {"cpt_code": "", "amount": 709.00, "description": "ED Proc Minor"},
+    ])
+    assert report["risk_level"] == "Medium"
+    assert "Missing Code" in [f["type"] for f in report["findings"]]
+    assert "itemised statement showing the CPT or HCPCS code" in report["dispute_letter"]
