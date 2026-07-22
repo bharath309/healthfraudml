@@ -182,6 +182,12 @@ def main():
         status = it.get("status", "")
         note = it.get("notes", "")
         lines.append(f"- `{code}` ${amt:,.2f} — **{status}**{(' — ' + note) if note else ''}")
+        # Two distinct facts: what the code means, and what the bill called it.
+        code_name = it.get("code_name")
+        lines.append(f"    - Code means: {code_name}" if code_name
+                     else "    - Code means: _no description on file_")
+        if it.get("description_source") == "bill":
+            lines.append(f"    - Bill says: {it.get('description')}")
     if coding_rows:
         lines += ["", "## Does the code match the service?", "",
                   "| Code | Status | What the code means | What the bill says | What we found |",

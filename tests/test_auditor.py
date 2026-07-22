@@ -282,3 +282,25 @@ def test_letter_states_code_meaning_not_the_bills_claim():
     assert "Administration of pneumococcal vaccine" in letter
     # ...and the bill's differing wording is quoted, not asserted as the meaning.
     assert 'described on the bill as: "administration of influenza vaccine"' in letter
+
+
+def test_audited_item_carries_code_meaning_separate_from_bill_wording():
+    """Two distinct facts per line: what the code means, what the bill called it."""
+    auditor = BillingAuditor(provider_name="Clinic")
+    item = auditor.audit_bill([
+        {"cpt_code": "G0009", "amount": 90.00,
+         "description": "administration of influenza vaccine"},
+    ])["audited_items"][0]
+    assert item["description"] == "administration of influenza vaccine"   # bill's claim
+    assert item["description_source"] == "bill"
+    assert item["code_name"] == "Administration of pneumococcal vaccine"  # code's meaning
+    assert item["code_name_source"] == "cms_hcpcs_l2"
+
+
+def test_code_meaning_is_none_when_unknown():
+    auditor = BillingAuditor(provider_name="Clinic")
+    item = auditor.audit_bill([
+        {"cpt_code": "70450", "amount": 2400.00, "description": "CT head"},
+    ])["audited_items"][0]
+    assert item["code_name"] is None
+    assert item["code_name_source"] is None

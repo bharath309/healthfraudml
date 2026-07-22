@@ -304,8 +304,14 @@ class BillingAuditor:
             
             audit_entry = {
                 "cpt_code": cpt,
+                # What the bill says this line is (partner wording wins).
                 "description": resolved_desc,
                 "description_source": desc_source,
+                # What the CODE means, independent of the bill's wording. Kept
+                # separate so a miscoded line's own claim is never mistaken for
+                # the code's definition.
+                "code_name": self.code_name(cpt),
+                "code_name_source": self.code_name_source(cpt),
                 "billed_amount": amount,
                 "status": "Clear",
                 "notes": "",
