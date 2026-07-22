@@ -153,67 +153,124 @@ Return your response strictly as a JSON object with the following schema:
                 return match.group(0).strip(), "parsed"
         return cls.PROVIDER_PLACEHOLDER, "not_found"
 
+    #: Lines that summarise the account rather than describe a charge.
+    _SUMMARY_MARKERS = (
+        "total", "balance", "insurance", "covered", "deductible", "coinsurance",
+        "copay", "responsibility", "payment", "adjustment", "billed to",
+        "amount due", "statement", "subtotal", "previous", "credit",
+    )
+
+    #: A CPT (5 digits) or HCPCS Level II (letter + 4 digits) code. The guards
+    #: keep it out of NDC segments like 0409-4276-01, quantities and amounts.
+    _CODE_RE = re.compile(r"(?<![\w$.,-])([A-Z]\d{4}|\d{5})(?![\w.,-])")
+
+    #: A dollar amount, with or without the sign.
+    _AMOUNT_RE = re.compile(r"\$\s*([\d,]+\.\d{2})|(?<![\d.,-])([\d,]+\.\d{2})(?![\d])")
+
+    #: A credit or payment: the amount is preceded by a minus sign.
+    _NEGATIVE_RE = re.compile(r"-\s*\$?\s*[\d,]+\.\d{2}")
+
+    @classmethod
+    def _clean_description(cls, line: str, code: str) -> str:
+        """The bill's own wording for a line, with code/system/amount removed."""
+        text = cls._AMOUNT_RE.sub(" ", line)
+        if code:
+            text = re.sub(rf"(?<![\w]){re.escape(code)}(?![\w])", " ", text)
+        text = re.sub(r"\((?:CPT|HCPCS|CDT|HCPCS Level II)[^)]*\)", " ", text, flags=re.I)
+        text = re.sub(r"[\s\-–—:|]+$", "", text.strip())
+        text = re.sub(r"^[\s\-–—:|]+", "", text)
+        return re.sub(r"\s{2,}", " ", text).strip()
+
+    @staticmethod
+    def _drop_subtotals(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove section headers whose amount is the sum of the lines beneath.
+
+        Portal bills print "Emergency Room $7,381.00" above the charges that
+        make it up. Counting both triples the total. Detected by arithmetic
+        rather than a list of section names, which would not survive a
+        different hospital's wording.
+
+        Subtotals nest: a grand total sits above section totals, which sit above
+        the charges. Running the pass once cannot see the grand total, because
+        its children still include the section totals and the sum overshoots.
+        So repeat until stable - innermost sections drop first, then the level
+        above them matches what remains.
+        """
+        while True:
+            drop = set()
+            for i, item in enumerate(items):
+                running = 0.0
+                for j in range(i + 1, len(items)):
+                    running = round(running + items[j]["amount"], 2)
+                    if running > item["amount"] + 0.005:
+                        break
+                    if abs(running - item["amount"]) < 0.005:
+                        drop.add(i)
+                        break
+                if i in drop:
+                    break
+            if not drop:
+                return items
+            items = [it for k, it in enumerate(items) if k not in drop]
+
     def _parse_with_regex(self, text: str) -> Dict[str, Any]:
-        """Robust regex fallback parser to extract common CPT codes and prices."""
-        items = []
-        # Never guessed loosely: a wrong provider name is addressed to the wrong
-        # party in an outbound letter, and on a real portal bill the top of the
-        # document is the PATIENT header, not the facility.
+        """Extract billed lines from bill text.
+
+        Reads only what is printed. Codes are never inferred from wording - an
+        earlier version mapped "minor" to 56420 and "level 5" to 99285, which
+        invents findings, since a code carries severity the auditor keys on.
+        Lines that cannot be parsed are reported rather than dropped.
+        """
         provider_name, provider_name_source = self._find_provider_name(text)
 
-        # Search line-by-line for CPT codes and associated dollar amounts
-        lines = text.split("\n")
-        for line in lines:
-            # Look for 5-digit numbers (potential CPT codes)
-            cpt_match = re.search(r"\b(9928[1-5]|9921[4-5]|56420|1200[1-2])\b", line)
-            # Look for dollar amounts (e.g. $6,672, $709, 1200.00)
-            amount_match = re.search(r"\$\s*([\d,]+(?:\.\d{2})?)|\b([\d,]+\.\d{2})\b", line)
+        items: List[Dict[str, Any]] = []
+        unparsed: List[str] = []
+        lines = [l.strip() for l in text.splitlines()]
 
-            if cpt_match and amount_match:
-                cpt = cpt_match.group(1)
-                amount_str = amount_match.group(1) or amount_match.group(2)
-                # Clean amount string
-                amount_cleaned = float(amount_str.replace(",", ""))
-                
-                # Make up a description if none found
-                description = "Procedure"
-                if "level 5" in line.lower() or "99285" in line:
-                    description = "ED Level 5 Visit"
-                elif "minor" in line.lower():
-                    description = "Minor Procedure"
-                elif "bartholin" in line.lower() or "56420" in line:
-                    description = "Bartholin Cyst I&D"
-                elif "suture" in line.lower() or "wound" in line.lower():
-                    description = "Superficial Wound Repair"
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            i += 1
+            if not line:
+                continue
+            low = line.lower()
+            if any(m in low for m in self._SUMMARY_MARKERS):
+                continue
+            # Credits and insurance payments reduce the balance; they are not charges.
+            if self._NEGATIVE_RE.search(line):
+                continue
 
-                items.append({
-                    "cpt_code": cpt,
-                    "description": description,
-                    "amount": amount_cleaned
-                })
+            code_m = self._CODE_RE.search(line)
+            amt_m = self._AMOUNT_RE.search(line)
 
-        # If no explicit CPT matches were found, try matching descriptions + amounts
-        if not items:
-            # Check for "$6,672" and "Level 5"
-            l5_match = re.search(r"(?i)level\s*5.*?\$\s*([\d,]+(?:\.\d{2})?)", text)
-            if l5_match:
-                items.append({
-                    "cpt_code": "99285",
-                    "description": "ED Level 5 Visit",
-                    "amount": float(l5_match.group(1).replace(",", ""))
-                })
-            # Check for minor procedure amount
-            minor_match = re.search(r"(?i)minor.*?\$\s*([\d,]+(?:\.\d{2})?)", text)
-            if minor_match:
-                items.append({
-                    "cpt_code": "56420",
-                    "description": "ED Proc Minor (Bartholin Cyst)",
-                    "amount": float(minor_match.group(1).replace(",", ""))
-                })
+            # Amount may sit on the following line (common in portal exports).
+            if code_m and not amt_m and i < len(lines):
+                nxt = lines[i]
+                if nxt and not any(m in nxt.lower() for m in self._SUMMARY_MARKERS):
+                    nxt_amt = self._AMOUNT_RE.search(nxt)
+                    if nxt_amt and not self._CODE_RE.search(nxt):
+                        amt_m = nxt_amt
+                        i += 1
+
+            if not amt_m:
+                if code_m:
+                    unparsed.append(line)
+                continue
+
+            amount = float((amt_m.group(1) or amt_m.group(2)).replace(",", ""))
+            code = code_m.group(1) if code_m else ""
+            items.append({
+                "cpt_code": code,
+                "description": self._clean_description(line, code),
+                "amount": amount,
+            })
+
+        items = self._drop_subtotals(items)
 
         return {
             "provider_name": provider_name,
             "provider_name_source": provider_name_source,
+            "unparsed_lines": unparsed,
             "items": items
         }
 

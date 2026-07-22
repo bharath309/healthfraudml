@@ -405,3 +405,52 @@ def test_real_provider_line_is_still_parsed():
     )
     assert "Example Health System" in data["provider_name"]
     assert data["provider_name_source"] == "parsed"
+
+
+def test_parser_reads_any_code_not_a_hardcoded_list():
+    """The old parser recognised only 10 codes; real bills carry anything."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Compr Met Pnl - 80053 (CPT) $471.00\n"
+        "Venipuncture - 36415 (CPT) $50.00\n"
+        "Lidocaine - J2003 (HCPCS) $75.00\n"
+    )
+    codes = [i["cpt_code"] for i in data["items"]]
+    assert codes == ["80053", "36415", "J2003"]
+    assert data["items"][0]["description"] == "Compr Met Pnl"
+
+
+def test_parser_never_infers_a_code_from_wording():
+    """Regression: 'minor' used to become 56420 and 'level 5' 99285."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text("ED Proc Minor $709.00\nLevel 5 visit $6,672.00\n")
+    for item in data["items"]:
+        assert item["cpt_code"] == "", "codes must never be inferred from wording"
+    assert {i["amount"] for i in data["items"]} == {709.00, 6672.00}
+
+
+def test_parser_drops_nested_subtotals_and_credits():
+    """Section and grand totals must not be counted as charges."""
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text(
+        "Billed $8,234.00\n"
+        "Emergency Room $7,381.00\n"
+        "ED Proc Minor $709.00\n"
+        "ED Level 5 W/Proc - 99285 (CPT) $6,672.00\n"
+        "Laboratory $853.00\n"
+        "Compr Met Pnl - 80053 (CPT) $471.00\n"
+        "Cbc - 85025 (CPT) $332.00\n"
+        "Lorazepam $50.00\n"
+        "Insurance covered -$1,564.46\n"
+    )
+    total = sum(i["amount"] for i in data["items"])
+    assert abs(total - 8234.00) < 0.01, f"expected the stated total, got {total}"
+    assert all(i["amount"] > 0 for i in data["items"])
+
+
+def test_parser_takes_amount_from_the_following_line():
+    parser = LLMBillParser(api_key=None)
+    data = parser.parse_bill_text("Cbc Automated - 85025\n$217.00\n")
+    assert len(data["items"]) == 1
+    assert data["items"][0]["cpt_code"] == "85025"
+    assert data["items"][0]["amount"] == 217.00
