@@ -8,7 +8,7 @@ institutions (Bahudhoddi, 2025).
 
 Theoretical foundations:
     - Technology Acceptance Model (Davis, 1989)
-    - Fraud Triangle Theory (Cressey, 1954)
+    - Fraud Triangle Theory (Cressey, 1953)
     - Diffusion of Innovations Theory (Rogers, 2003)
 """
 

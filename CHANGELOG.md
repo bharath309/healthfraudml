@@ -2,6 +2,22 @@
 
 All notable changes to HealthFraudML will be documented in this file.
 
+## [0.2.1] - 2026-07-28
+
+### Changed
+- Documentation accuracy pass ahead of the archived DOI release. Corrected claims in
+  docstrings, README, release notes and changelog that overstated what the code does:
+  the synthetic claims generator is hand-parameterised and not calibrated to CMS data;
+  explanations come from model feature importances, not SHAP/LIME; the anonymizer does
+  not provide a k-anonymity guarantee; `IdentityTheftDetector.detect()` is a stub; and
+  no kickback detector exists. Corrected the Randhawa et al. citation year to 2018 and
+  the Cressey citation year to 1953.
+- Added `.zenodo.json` and `CITATION.cff` for the Zenodo record.
+
+### Notes
+- No behaviour change to any model, generator, metric or detector. No dependency changes
+  to `install_requires`.
+
 ## [0.2.0] - 2026-07-17
 
 ### Added

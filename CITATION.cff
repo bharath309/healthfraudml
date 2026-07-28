@@ -22,11 +22,11 @@ abstract: >-
   feature importances; SHAP and LIME are not used by the package. The
   repository ships a price benchmark of 7,359 separately payable CPT/HCPCS
   codes derived from the public CMS Physician Fee Schedule Relative Value File
-  (PPRRVU25_JAN.csv, conversion factor 32.3465), and 8,387 plain-language code
-  names from the public CMS quarterly alpha-numeric HCPCS file; no AMA CPT
-  descriptors are distributed. The identity-theft detector is a stub that
-  always returns no findings, no kickback detector exists, and the
-  anonymization module does not provide a k-anonymity guarantee.
+  (PPRRVU25_JAN.csv, conversion factor 32.3465), carrying code numbers and CMS
+  national payment amounts only; no AMA CPT descriptors are distributed. The
+  identity-theft detector is a stub that always returns no findings, no
+  kickback detector exists, and the anonymization module does not provide a
+  k-anonymity guarantee.
 keywords:
   - healthcare fraud detection
   - machine learning

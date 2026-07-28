@@ -4,7 +4,7 @@
 
 ## Highlights
 
-- **Rule-based billing auditor** that catches upcoding, unbundling, phantom billing, duplicate claims, and anomalous billing patterns using CPT code analysis and provider profiling
+- **Rule-based billing auditor** that catches upcoding, unbundling and overpricing using CPT code analysis and provider profiling. Phantom billing and duplicate claims are handled by separate `fraud_types/` modules
 - **8-model ML comparison suite** with a synthetic 50K-claim dataset — Random Forest, SVM, Gradient Boosting, Neural Network, Naive Bayes, K-Means, AIS, and a novel AdaBoost-Voting Ensemble
 - **SMOTE-ENN resampling** for the extreme class imbalance inherent in fraud data (96.8% non-fraud)
 - **Feature-importance explanations** so every fraud flag comes with a human-interpretable reason. Explanations come from the model's own `feature_importances_`/`coef_`; SHAP and LIME are not used by the package. (The standalone `experiments/run_comparison.py` script does use SHAP, separately from the package.)

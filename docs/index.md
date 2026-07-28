@@ -8,7 +8,7 @@ The framework is grounded in doctoral research by **Dr. Bharath Kumar Bahudhoddi
 
 ## Key Capabilities
 
-*   **Healthcare-Specific Preprocessing**: Predefined pipelines built to handle ICD, CPT, and NDC billing codes, manage class imbalance, and enforce HIPAA compliance (de-identification).
+*   **Healthcare-Specific Preprocessing**: Predefined pipelines built to handle ICD, CPT, and NDC billing codes, manage class imbalance, and apply HIPAA Safe Harbor-style de-identification (helpers, not a compliance guarantee).
 *   **Modular Detector API**: A unified `FraudDetector` class for training, predicting, and evaluating machine learning models.
 *   **Diverse Algorithm Implementations**:
     *   *Supervised*: Neural Networks, Support Vector Machines (SVMs), Bayesian Classifiers, Random Forests, and Gradient Boosting.

@@ -6,7 +6,7 @@ healthcare fraud detection across supervised, unsupervised, and hybrid models.
 
 Theoretical Foundations:
     - Technology Acceptance Model (Davis, 1989): Designed for perceived ease of use
-    - Fraud Triangle Theory (Cressey, 1954): Targets opportunity reduction
+    - Fraud Triangle Theory (Cressey, 1953): Targets opportunity reduction
     - Diffusion of Innovations (Rogers, 2003): Scalable across institution sizes
 """
 

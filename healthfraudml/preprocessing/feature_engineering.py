@@ -4,7 +4,7 @@ Domain-specific feature engineering for healthcare fraud detection.
 Creates features grounded in fraud patterns identified through qualitative
 research with healthcare professionals (Bahudhoddi, 2025), including
 provider billing behavior, claim frequency anomalies, and cross-claim
-pattern indicators aligned with the Fraud Triangle Theory (Cressey, 1954).
+pattern indicators aligned with the Fraud Triangle Theory (Cressey, 1953).
 """
 
 import numpy as np

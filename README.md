@@ -144,7 +144,7 @@ healthfraudml/
 │   ├── supervised/          # Neural Net, SVM, Random Forest, Gradient Boosting, Bayesian
 │   ├── unsupervised/        # K-Means, Outlier Detection, Artificial Immune Systems
 │   └── hybrid/              # AdaBoost Ensemble, Stacked Models
-├── preprocessing/           # Claims pipelines, feature engineering, HIPAA privacy
+├── preprocessing/           # Claims pipelines, feature engineering, Safe Harbor de-identification
 ├── evaluation/              # Metrics, benchmarking, feature-importance explainability
 ├── readiness/               # TAM-based organizational assessment
 ├── auditor/                 # Patient billing auditor

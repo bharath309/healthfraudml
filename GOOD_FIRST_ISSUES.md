@@ -8,7 +8,7 @@ Create these as GitHub Issues with the label `good first issue`. These attract n
 
 **Labels**: `good first issue`, `testing`
 
-The `BillingAuditor` class has 6 fraud detection methods but no unit tests. Add pytest tests covering:
+The `BillingAuditor.audit_bill()` entry point covers several rule families (upcoding, unbundling, overpricing) but has no unit tests. Add pytest tests covering:
 - `check_upcoding()` with claims above and below threshold
 - `check_unbundling()` with bundled and unbundled procedure sets
 - `check_phantom_billing()` with valid and phantom provider/patient combos

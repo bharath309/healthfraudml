@@ -1,10 +1,13 @@
 """
-Privacy-preserving data handling utilities for HIPAA compliance.
+De-identification helpers for healthcare claims data.
 
 Healthcare fraud detection requires processing Protected Health Information
-(PHI). This module provides anonymization, de-identification, and differential
-privacy utilities to ensure HIPAA compliance while maintaining data utility
-for ML model training (Bahudhoddi, 2025).
+(PHI). This module provides identifier removal, hashing and generalization
+utilities that follow the HIPAA Safe Harbor identifier list, while preserving
+data utility for ML model training (Bahudhoddi, 2025).
+
+These are helpers, not a compliance guarantee. Verify de-identification
+independently before releasing any data.
 """
 
 import numpy as np
