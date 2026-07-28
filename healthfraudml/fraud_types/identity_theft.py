@@ -13,11 +13,17 @@ from typing import Optional
 
 class IdentityTheftDetector:
     """
-    Detect potential patient identity theft through behavioral profiling.
+    STUB - NOT YET IMPLEMENTED. Do not use for detection.
 
-    Flags patients with geographically impossible claim patterns,
-    sudden changes in billing frequency, or demographically
-    inconsistent procedures.
+    ``fit()`` computes patient claim-frequency baselines, but ``detect()`` is a
+    placeholder: it sets ``identity_theft_flag = 0`` and
+    ``identity_theft_score = 0.0`` for every row and returns. It never uses the
+    fitted baselines and can never return a positive finding. The parameters
+    below are accepted but unused.
+
+    The intended behaviour - flagging geographically impossible claim patterns,
+    sudden changes in billing frequency, or demographically inconsistent
+    procedures - is not implemented.
 
     Parameters
     ----------
@@ -56,7 +62,10 @@ class IdentityTheftDetector:
         return self
 
     def detect(self, claims_df: pd.DataFrame) -> pd.DataFrame:
-        """Flag claims with identity theft indicators."""
+        """STUB: returns every row with flag 0 and score 0.0.
+
+        Not implemented. Always reports no findings, regardless of input.
+        """
         df = claims_df.copy()
         df["identity_theft_flag"] = 0
         df["identity_theft_score"] = 0.0

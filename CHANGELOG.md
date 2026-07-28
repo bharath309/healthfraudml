@@ -33,13 +33,13 @@ All notable changes to HealthFraudML will be documented in this file.
 
 ### Added
 - **Core Framework**: Healthcare claims fraud detection pipeline with modular architecture
-- **BillingAuditor**: Rule-based billing audit engine covering 6 fraud patterns (upcoding, unbundling, phantom billing, duplicate claims, identity fraud, anomalous patterns)
-- **LLM Integration**: Optional GPT/Claude integration for natural language fraud explanations
+- **BillingAuditor**: Rule-based billing audit engine covering upcoding, unbundling and overpricing. Separate `fraud_types/` modules implement phantom billing and duplicate claims; the identity-theft detector is a stub that returns no findings, and no kickback detector exists
+- **LLM Integration**: Optional Google Gemini (`google-genai`) integration for natural language fraud explanations, with a regex fallback when no API key is set
 - **ML Comparison Suite**: Experiment script comparing 8 ML architectures:
   - Random Forest, SVM (RBF), Neural Network (MLP), Gradient Boosting, Naive Bayes, K-Means Clustering, Artificial Immune System (Negative Selection), AdaBoost-Voting Ensemble
-- **Synthetic Data Generator**: Configurable healthcare claims dataset with realistic fraud distributions (50K claims, 3.2% fraud rate, 20 CPT codes, 500 providers)
+- **Synthetic Data Generator**: Configurable healthcare claims dataset with hand-chosen, illustrative fraud distributions — not calibrated to real claims data (50K claims, 3.2% fraud rate, 20 CPT codes, 500 providers)
 - **SMOTE-ENN Resampling**: Hybrid oversampling/cleaning for severe class imbalance
-- **Explainability**: SHAP-based feature importance analysis with fallback to Gini importance
+- **Explainability**: the package explains flagged cases using each model's own feature importances (SHAP and LIME are not used by the package). The standalone `experiments/run_comparison.py` script separately uses SHAP TreeExplainer, falling back to Gini importance when SHAP is not installed
 - **Evaluation Metrics**: F1-score, AUC-PR, MCC (fraud-appropriate metrics, not accuracy)
 - **Documentation**: Comprehensive README, contributing guidelines, and experiment instructions
 

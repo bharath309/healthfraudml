@@ -78,7 +78,7 @@ healthfraudml/
 │   ├── billing_auditor.py   # Rule-based CPT audit engine
 │   ├── llm_integration.py   # Gemini LLM parser + RAG auditor
 │   └── db.py                # ChromaDB vector store for CPT rules
-├── privacy/           # HIPAA-compliant utilities
+├── privacy/           # Safe Harbor-style de-identification utilities
 └── utils/             # Shared helpers
 ```
 

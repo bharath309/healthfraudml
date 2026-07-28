@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "HealthFraudML: Open-Source Healthcare Fraud Detection Framework"
+type: software
+authors:
+  - family-names: "Bahudhoddi"
+    given-names: "Bharath Kumar"
+    orcid: "https://orcid.org/0009-0003-0118-7428"
+    affiliation: "University of the Cumberlands"
+repository-code: "https://github.com/bharath309/healthfraudml"
+url: "https://github.com/bharath309/healthfraudml"
+license: MIT
+version: 0.2.1
+abstract: >-
+  HealthFraudML is a modular Python framework for healthcare claims fraud
+  detection. It provides a unified API over supervised, unsupervised and hybrid
+  machine-learning models; fraud-type detectors for upcoding, unbundling,
+  duplicate claims and phantom billing; a rule-based patient billing auditor
+  that flags upcoding, unbundling and charges far above a disclosed review
+  threshold, and drafts a dispute letter; and an organizational readiness
+  assessment. Explanations for flagged cases are derived from each model's own
+  feature importances; SHAP and LIME are not used by the package. The
+  repository ships a price benchmark of 7,359 separately payable CPT/HCPCS
+  codes derived from the public CMS Physician Fee Schedule Relative Value File
+  (PPRRVU25_JAN.csv, conversion factor 32.3465), and 8,387 plain-language code
+  names from the public CMS quarterly alpha-numeric HCPCS file; no AMA CPT
+  descriptors are distributed. The identity-theft detector is a stub that
+  always returns no findings, no kickback detector exists, and the
+  anonymization module does not provide a k-anonymity guarantee.
+keywords:
+  - healthcare fraud detection
+  - machine learning
+  - medical billing
+  - claims analysis
+  - explainable AI
+  - CMS Physician Fee Schedule
+  - Python

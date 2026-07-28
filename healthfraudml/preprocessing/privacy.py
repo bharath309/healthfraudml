@@ -15,11 +15,18 @@ from typing import List, Optional
 
 class DataAnonymizer:
     """
-    HIPAA-compliant data anonymization for healthcare claims.
+    De-identification helpers for healthcare claims, following the
+    HIPAA Safe Harbor identifier list.
 
-    Implements Safe Harbor de-identification and k-anonymity to protect
-    patient privacy while preserving the statistical properties needed
-    for effective fraud detection.
+    Implements HIPAA Safe Harbor-style identifier removal, hashing, and
+    generalization of quasi-identifiers, while preserving the statistical
+    properties needed for fraud detection.
+
+    This class does NOT provide a k-anonymity guarantee. The "k_anonymity"
+    method generalizes quasi-identifiers but performs no group-size check
+    and no suppression, so it cannot ensure every equivalence class has at
+    least k members. Verify anonymity independently before releasing data,
+    and do not rely on this class alone for regulatory compliance.
 
     Parameters
     ----------
@@ -27,7 +34,8 @@ class DataAnonymizer:
         Anonymization method: "safe_harbor" (HIPAA Safe Harbor),
         "k_anonymity", or "hash".
     k : int, default=5
-        Minimum group size for k-anonymity. Ignored for other methods.
+        Intended minimum group size. Currently stored but NOT enforced by
+        any method; no group-size check is implemented.
     salt : str, optional
         Salt for hash-based anonymization. Generated randomly if not provided.
 
@@ -130,7 +138,12 @@ class DataAnonymizer:
         return df
 
     def _k_anonymize(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply k-anonymity by generalizing quasi-identifiers."""
+        """Generalize quasi-identifiers: bin ages, truncate ZIP to 3 digits.
+
+        This is a generalization step only. It does not check equivalence-class
+        sizes against ``self.k`` and does not suppress small groups, so it does
+        NOT establish k-anonymity.
+        """
         # Generalize age to ranges
         age_cols = [c for c in df.columns if "age" in c.lower()]
         for col in age_cols:

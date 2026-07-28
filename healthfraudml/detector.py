@@ -72,7 +72,10 @@ class FraudDetector:
         Transactions with fraud scores >= threshold are flagged.
     explain : bool, default=True
         Whether to generate human-readable explanations for flagged cases.
-        Uses SHAP/LIME when available, falls back to feature importance.
+        Explanations are derived from the model's own feature importances
+        (``feature_importances_``, ``coef_`` or ``coefs_``); models exposing
+        none of these return no explanation. SHAP and LIME are not used by
+        this package.
 
     Examples
     --------
@@ -90,7 +93,9 @@ class FraudDetector:
     University of the Cumberlands].
     """
 
-    # Healthcare fraud type labels derived from qualitative research
+    # Fraud-type label vocabulary derived from qualitative research. This is a
+    # taxonomy of labels only; the package does not ship a working detector for
+    # every entry (identity_theft is a stub, kickbacks has no module).
     FRAUD_TYPES = [
         "upcoding",
         "phantom_billing",

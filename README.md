@@ -48,14 +48,14 @@ print(report['dispute_letter'])                         # Ready-to-send dispute 
 
 ## Supported Fraud Types
 
-| Fraud Type | Description | Detection Approach |
-|-----------|-------------|-------------------|
-| Upcoding | Billing for more expensive services than provided | Supervised classification |
-| Phantom Billing | Billing for services never rendered | Anomaly detection |
-| Duplicate Claims | Submitting the same claim multiple times | Rule-based + ML hybrid |
-| Unbundling | Separately billing bundled services | Pattern analysis |
-| Identity Theft | Using stolen patient identities | Behavioral profiling |
-| Kickbacks | Illegal referral arrangements | Network analysis |
+| Fraud Type | Description | Detection Approach | Status |
+|-----------|-------------|-------------------|--------|
+| Upcoding | Billing for more expensive services than provided | Supervised classification | Implemented |
+| Phantom Billing | Billing for services never rendered | Anomaly detection | Implemented |
+| Duplicate Claims | Submitting the same claim multiple times | Rule-based + ML hybrid | Implemented |
+| Unbundling | Separately billing bundled services | Pattern analysis | Implemented (not exported from `fraud_types/__init__.py`; import from `healthfraudml.fraud_types.unbundling`) |
+| Identity Theft | Using stolen patient identities | Behavioral profiling | **Stub — not implemented.** `detect()` always returns no findings |
+| Kickbacks | Illegal referral arrangements | Network analysis | **Not implemented.** No module exists; listed as intended scope only |
 
 ## Installation
 
@@ -145,7 +145,7 @@ healthfraudml/
 │   ├── unsupervised/        # K-Means, Outlier Detection, Artificial Immune Systems
 │   └── hybrid/              # AdaBoost Ensemble, Stacked Models
 ├── preprocessing/           # Claims pipelines, feature engineering, HIPAA privacy
-├── evaluation/              # Metrics, benchmarking, SHAP/LIME explainability
+├── evaluation/              # Metrics, benchmarking, feature-importance explainability
 ├── readiness/               # TAM-based organizational assessment
 ├── auditor/                 # Patient billing auditor
 │   ├── billing_auditor.py   # Rule-based CPT audit engine

@@ -1,7 +1,7 @@
 """
 Hybrid Ensemble model combining supervised and unsupervised fraud detection.
 
-Randhawa et al. (2015) achieved a perfect MCC of 1.0 using AdaBoost with
+Randhawa et al. (2018) achieved a perfect MCC of 1.0 using AdaBoost with
 majority voting. Even with 30% noise, majority voting maintained MCC of
 0.942. This implementation combines multiple detection approaches for
 robust healthcare fraud detection.
@@ -23,7 +23,7 @@ class HybridEnsemble:
     Hybrid ensemble combining AdaBoost, majority voting, and anomaly
     detection for healthcare fraud.
 
-    Implements the approach validated by Randhawa et al. (2015) and
+    Implements the approach validated by Randhawa et al. (2018) and
     Sivanantham et al. (2021), combining supervised classifiers with
     unsupervised anomaly scores as additional features.
 

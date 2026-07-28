@@ -16,10 +16,11 @@ class FeatureEngineer:
     """
     Healthcare fraud-specific feature engineering.
 
-    Generates derived features that capture the behavioral and statistical
-    patterns most associated with healthcare fraud types: upcoding,
-    phantom billing, duplicate claims, unbundling, identity theft,
-    and kickback schemes.
+    Generates provider-, patient- and claim-level aggregate features
+    (billing patterns, peer comparisons, visit frequency) intended to support
+    detection of upcoding, phantom billing, duplicate claims and unbundling.
+    No referral-network or cross-provider relationship features are computed,
+    so kickback schemes are not addressed by this module.
 
     Parameters
     ----------

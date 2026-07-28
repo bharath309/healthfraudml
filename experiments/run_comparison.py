@@ -39,15 +39,46 @@ warnings.filterwarnings("ignore")
 
 def generate_synthetic_claims(n_samples=50000, fraud_rate=0.032, random_state=42):
     """
-    Generate synthetic healthcare claims dataset reflecting real-world
-    statistical properties from CMS Medicare Provider Utilization data.
+    Generate a synthetic healthcare claims dataset from hand-chosen parameters.
+
+    No external data source is read. Every distribution below is specified in
+    this function as an illustrative parameter, not fitted, sampled or
+    calibrated against CMS or any other real claims data:
+
+    - Procedure-code universe: 20 CPT codes chosen by hand, each with a
+      hand-assigned severity, category and ``fair_min``/``fair_max`` band.
+      These bands are illustrative charge-like ranges and are NOT Medicare
+      payment amounts. For comparison, this generator uses 1500-3500 for CPT
+      99285 while the repository's CMS-derived fee-schedule benchmark gives a
+      national payment of $168.85 for the same code.
+    - Code frequencies: the fixed ``cpt_weights`` list below, chosen by hand.
+    - Claim amounts: uniform draws between the hand-chosen ``fair_min`` and
+      ``fair_max`` for the sampled code.
+    - Fraud prevalence: the ``fraud_rate`` argument (default 0.032). This is a
+      configurable input, not a measured rate.
+    - Fraud-type mix, provider and patient counts, patient ages
+      (Normal(55, 18)), gender, region and specialty: all hand-chosen or
+      uniform random.
+
+    The dataset is therefore useful for exercising the pipeline and for
+    controlled experiments where the fraud pattern is known by construction.
+    It should not be described as representative of real claims, and results
+    obtained on it do not transfer to real-world prevalence or performance.
+    For evaluation against real labelled data, use ``--kaggle``.
+
+    Note: the repository does contain a genuinely CMS-derived artifact, but it
+    is a different file and is not used here — see
+    ``healthfraudml/auditor/data/cms_pfs_benchmark.csv``, built by
+    ``scripts/build_cms_benchmark.py`` from the CMS PFS Relative Value File
+    (PPRRVU25_JAN.csv, conversion factor 32.3465).
 
     Parameters
     ----------
     n_samples : int
         Total number of claims to generate.
     fraud_rate : float
-        Proportion of fraudulent claims (default 3.2%).
+        Proportion of claims labelled fraudulent (default 3.2%). A generator
+        input, not an empirical estimate.
     random_state : int
         Random seed for reproducibility.
 
