@@ -2,7 +2,7 @@
 
 All notable changes to HealthFraudML will be documented in this file.
 
-## [0.2.1] - 2026-07-28
+## [0.2.1] - 2026-07-22
 
 ### Changed
 - Documentation accuracy pass ahead of the archived DOI release. Corrected claims in
