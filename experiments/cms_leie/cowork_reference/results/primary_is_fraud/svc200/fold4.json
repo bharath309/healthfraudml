@@ -1,0 +1,36 @@
+{
+ "model": "svc200",
+ "fold": 4,
+ "set": "primary",
+ "label": "is_fraud",
+ "train_rows_resampled": 311395,
+ "train_pos_resampled": 173071,
+ "test_rows": 2705560,
+ "test_pos": 2233,
+ "f1": 0.002843304980602877,
+ "precision": 0.001460956555113967,
+ "recall": 0.05284370801612181,
+ "mcc": 0.003882714397459488,
+ "auc_pr": 0.0012902202938474003,
+ "auc_roc": 0.6318522741821028,
+ "tp": 118,
+ "fp": 80651,
+ "tn": 2622676,
+ "fn": 2115,
+ "fit_seconds": 418.7,
+ "pred_seconds": 1512.6,
+ "increments": [],
+ "svc_subsample_rows": 30000,
+ "svc_subsample_pos": 16758,
+ "n_support": [
+  12898,
+  16330
+ ],
+ "mlp_n_iter": null,
+ "versions": {
+  "sklearn": "1.8.0",
+  "imblearn": "0.14.2",
+  "numpy": "2.4.4"
+ },
+ "note": "identical estimator to the standalone SVM (same hyper-parameters C=10, RBF, gamma=scale, class_weight=balanced, probability=True, random_state=42, same 30,000-row subsample default_rng(1000+k)); fold 1 computed independently agreed to float32 rounding (max |diff| 6e-8); folds 2-5 reuse the SVM predictions"
+}

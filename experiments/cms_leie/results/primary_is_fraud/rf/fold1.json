@@ -1,0 +1,38 @@
+{
+ "model": "rf",
+ "fold": 1,
+ "set": "primary",
+ "label": "is_fraud",
+ "train_rows_resampled": 310840,
+ "train_pos_resampled": 172993,
+ "test_rows": 2705561,
+ "test_pos": 2234,
+ "f1": 0.010985382456407716,
+ "precision": 0.005571730392662063,
+ "recall": 0.38719785138764545,
+ "mcc": 0.04076736258653105,
+ "auc_pr": 0.010043589426543228,
+ "auc_roc": 0.7968857211004969,
+ "tp": 865,
+ "fp": 154383,
+ "tn": 2548944,
+ "fn": 1369,
+ "fit_seconds": 293.9,
+ "pred_seconds": 81.4,
+ "increments": [
+  58.4,
+  61.4,
+  57.6,
+  57.1,
+  59.4
+ ],
+ "svc_subsample_rows": null,
+ "svc_subsample_pos": null,
+ "n_support": null,
+ "mlp_n_iter": null,
+ "versions": {
+  "sklearn": "1.8.0",
+  "imblearn": "0.14.2",
+  "numpy": "2.4.4"
+ }
+}

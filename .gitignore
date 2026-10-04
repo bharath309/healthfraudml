@@ -48,3 +48,13 @@ linkedin-mcp/.token
 .pytest_cache/
 .coverage
 htmlcov/
+
+# CMS-LEIE arm: large data and run state
+experiments/cms_leie/data/
+experiments/cms_leie/state/
+experiments/cms_leie/**/*.npy
+experiments/cms_leie/.venv/
+experiments/cms_leie/logs/
+experiments/cms_leie/results/oof/
+experiments/cms_leie/**/*.parquet
+experiments/cms_leie/**/__pycache__/

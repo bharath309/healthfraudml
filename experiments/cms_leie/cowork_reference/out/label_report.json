@@ -1,0 +1,392 @@
+{
+ "leie_rows": 84001,
+ "leie_rows_with_npi": 8881,
+ "excltype_distinct": {
+  "1128b4": 33393,
+  "1128a1": 26047,
+  "1128a2": 8118,
+  "1128a3": 5884,
+  "1128a4": 3593,
+  "1128b14": 2166,
+  "1128b8": 1497,
+  "1128b1": 942,
+  "1128b5": 805,
+  "1128b7": 756,
+  "1128b3": 330,
+  "1128Aa": 172,
+  "1128b6": 77,
+  "1128b2": 66,
+  "1156": 53,
+  "1128b15": 37,
+  "BRCH SA": 28,
+  "BRCH CIA": 13,
+  "1128b11": 13,
+  "1160": 8,
+  "1128b16": 2,
+  "1128b12": 1
+ },
+ "excltype_normalised_mapping": {
+  "1128a1": [
+   "1128a1"
+  ],
+  "1128a2": [
+   "1128a2"
+  ],
+  "1128a3": [
+   "1128a3"
+  ],
+  "1128a4": [
+   "1128a4"
+  ],
+  "1128aa": [
+   "1128Aa"
+  ],
+  "1128b1": [
+   "1128b1"
+  ],
+  "1128b11": [
+   "1128b11"
+  ],
+  "1128b12": [
+   "1128b12"
+  ],
+  "1128b14": [
+   "1128b14"
+  ],
+  "1128b15": [
+   "1128b15"
+  ],
+  "1128b16": [
+   "1128b16"
+  ],
+  "1128b2": [
+   "1128b2"
+  ],
+  "1128b3": [
+   "1128b3"
+  ],
+  "1128b4": [
+   "1128b4"
+  ],
+  "1128b5": [
+   "1128b5"
+  ],
+  "1128b6": [
+   "1128b6"
+  ],
+  "1128b7": [
+   "1128b7"
+  ],
+  "1128b8": [
+   "1128b8"
+  ],
+  "1156": [
+   "1156"
+  ],
+  "1160": [
+   "1160"
+  ],
+  "brchcia": [
+   "BRCH CIA"
+  ],
+  "brchsa": [
+   "BRCH SA"
+  ]
+ },
+ "leie_rows_primary_set": 74198,
+ "leie_rows_primary_set_with_npi": 7335,
+ "leie_rows_mandatory_set_with_npi": 4478,
+ "leie_rows_with_reindate": 0,
+ "leie_rows_with_waiverdate": 2,
+ "leie_rows_bad_excldate": 0,
+ "excl_year_distribution_primary_with_npi": {
+  "1989": 2,
+  "1993": 1,
+  "1995": 1,
+  "1996": 1,
+  "1997": 1,
+  "2000": 3,
+  "2001": 1,
+  "2002": 3,
+  "2003": 3,
+  "2004": 3,
+  "2005": 3,
+  "2006": 2,
+  "2007": 4,
+  "2008": 10,
+  "2009": 113,
+  "2010": 226,
+  "2011": 174,
+  "2012": 286,
+  "2013": 298,
+  "2014": 388,
+  "2015": 411,
+  "2016": 463,
+  "2017": 452,
+  "2018": 400,
+  "2019": 362,
+  "2020": 292,
+  "2021": 343,
+  "2022": 377,
+  "2023": 550,
+  "2024": 597,
+  "2025": 752,
+  "2026": 626,
+  "2027": 187
+ },
+ "distinct_npis_primary": 7231,
+ "distinct_npis_mandatory": 4436,
+ "distinct_npis_any_authority": 8700,
+ "per_year": {
+  "2013": {
+   "rows_file": 956251,
+   "rows_us": 956177,
+   "rows_dropped_post_exclusion": 0,
+   "rows_kept": 956177,
+   "fraud_primary": 1733,
+   "fraud_mandatory": 1021,
+   "fraud_5yr": 535,
+   "fraud_rate_primary_pct": 0.1812,
+   "entity_I": 898179,
+   "entity_O": 57998,
+   "fraud_entity_I": 1714,
+   "fraud_entity_O": 19
+  },
+  "2014": {
+   "rows_file": 986657,
+   "rows_us": 986584,
+   "rows_dropped_post_exclusion": 3,
+   "rows_kept": 986581,
+   "fraud_primary": 1607,
+   "fraud_mandatory": 955,
+   "fraud_5yr": 526,
+   "fraud_rate_primary_pct": 0.1629,
+   "entity_I": 925257,
+   "entity_O": 61324,
+   "fraud_entity_I": 1585,
+   "fraud_entity_O": 22
+  },
+  "2015": {
+   "rows_file": 1019377,
+   "rows_us": 1019301,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1019299,
+   "fraud_primary": 1480,
+   "fraud_mandatory": 894,
+   "fraud_5yr": 464,
+   "fraud_rate_primary_pct": 0.1452,
+   "entity_I": 956725,
+   "entity_O": 62574,
+   "fraud_entity_I": 1457,
+   "fraud_entity_O": 23
+  },
+  "2016": {
+   "rows_file": 1053958,
+   "rows_us": 1053883,
+   "rows_dropped_post_exclusion": 3,
+   "rows_kept": 1053880,
+   "fraud_primary": 1339,
+   "fraud_mandatory": 800,
+   "fraud_5yr": 412,
+   "fraud_rate_primary_pct": 0.1271,
+   "entity_I": 991284,
+   "entity_O": 62596,
+   "fraud_entity_I": 1317,
+   "fraud_entity_O": 22
+  },
+  "2017": {
+   "rows_file": 1088687,
+   "rows_us": 1088599,
+   "rows_dropped_post_exclusion": 5,
+   "rows_kept": 1088594,
+   "fraud_primary": 1170,
+   "fraud_mandatory": 704,
+   "fraud_5yr": 376,
+   "fraud_rate_primary_pct": 0.1075,
+   "entity_I": 1026731,
+   "entity_O": 61863,
+   "fraud_entity_I": 1148,
+   "fraud_entity_O": 22
+  },
+  "2018": {
+   "rows_file": 1121462,
+   "rows_us": 1121205,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1121203,
+   "fraud_primary": 1003,
+   "fraud_mandatory": 576,
+   "fraud_5yr": 396,
+   "fraud_rate_primary_pct": 0.0895,
+   "entity_I": 1060427,
+   "entity_O": 60776,
+   "fraud_entity_I": 984,
+   "fraud_entity_O": 19
+  },
+  "2019": {
+   "rows_file": 1155870,
+   "rows_us": 1155787,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1155785,
+   "fraud_primary": 845,
+   "fraud_mandatory": 463,
+   "fraud_5yr": 429,
+   "fraud_rate_primary_pct": 0.0731,
+   "entity_I": 1095856,
+   "entity_O": 59929,
+   "fraud_entity_I": 827,
+   "fraud_entity_O": 18
+  },
+  "2020": {
+   "rows_file": 1161542,
+   "rows_us": 1161468,
+   "rows_dropped_post_exclusion": 3,
+   "rows_kept": 1161465,
+   "fraud_primary": 683,
+   "fraud_mandatory": 354,
+   "fraud_5yr": 473,
+   "fraud_rate_primary_pct": 0.0588,
+   "entity_I": 1100723,
+   "entity_O": 60742,
+   "fraud_entity_I": 671,
+   "fraud_entity_O": 12
+  },
+  "2021": {
+   "rows_file": 1198754,
+   "rows_us": 1198687,
+   "rows_dropped_post_exclusion": 3,
+   "rows_kept": 1198684,
+   "fraud_primary": 542,
+   "fraud_mandatory": 261,
+   "fraud_5yr": 478,
+   "fraud_rate_primary_pct": 0.0452,
+   "entity_I": 1133848,
+   "entity_O": 64836,
+   "fraud_entity_I": 532,
+   "fraud_entity_O": 10
+  },
+  "2022": {
+   "rows_file": 1230293,
+   "rows_us": 1230217,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1230215,
+   "fraud_primary": 384,
+   "fraud_mandatory": 176,
+   "fraud_5yr": 384,
+   "fraud_rate_primary_pct": 0.0312,
+   "entity_I": 1165571,
+   "entity_O": 64644,
+   "fraud_entity_I": 377,
+   "fraud_entity_O": 7
+  },
+  "2023": {
+   "rows_file": 1259343,
+   "rows_us": 1259266,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1259264,
+   "fraud_primary": 243,
+   "fraud_mandatory": 102,
+   "fraud_5yr": 243,
+   "fraud_rate_primary_pct": 0.0193,
+   "entity_I": 1196456,
+   "entity_O": 62808,
+   "fraud_entity_I": 239,
+   "fraud_entity_O": 4
+  },
+  "2024": {
+   "rows_file": 1296739,
+   "rows_us": 1296656,
+   "rows_dropped_post_exclusion": 2,
+   "rows_kept": 1296654,
+   "fraud_primary": 140,
+   "fraud_mandatory": 55,
+   "fraud_5yr": 140,
+   "fraud_rate_primary_pct": 0.0108,
+   "entity_I": 1235673,
+   "entity_O": 60981,
+   "fraud_entity_I": 139,
+   "fraud_entity_O": 1
+  }
+ },
+ "totals": {
+  "rows_us": 13527830,
+  "rows_kept": 13527801,
+  "rows_dropped_post_exclusion": 29,
+  "fraud_primary": 11169,
+  "fraud_mandatory": 6361,
+  "fraud_5yr": 4856,
+  "fraud_rate_primary_pct": 0.0826,
+  "matched_npis_primary_in_cms": 2131,
+  "npis_with_any_authority_in_cms": 2646
+ },
+ "fraud_rows_top_provider_types": [
+  [
+   "Family Practice",
+   1954
+  ],
+  [
+   "Internal Medicine",
+   1619
+  ],
+  [
+   "Nurse Practitioner",
+   793
+  ],
+  [
+   "Psychiatry",
+   552
+  ],
+  [
+   "Chiropractic",
+   481
+  ],
+  [
+   "Emergency Medicine",
+   412
+  ],
+  [
+   "Podiatry",
+   378
+  ],
+  [
+   "Anesthesiology",
+   369
+  ],
+  [
+   "General Practice",
+   280
+  ],
+  [
+   "Physical Medicine and Rehabilitation",
+   272
+  ],
+  [
+   "Physician Assistant",
+   252
+  ],
+  [
+   "Obstetrics & Gynecology",
+   206
+  ],
+  [
+   "Orthopedic Surgery",
+   193
+  ],
+  [
+   "General Surgery",
+   191
+  ],
+  [
+   "Pain Management",
+   183
+  ]
+ ],
+ "fraud_rows_entity_type": {
+  "I": 10990,
+  "O": 179
+ },
+ "sampling_ratio_rule": {
+  "P": 11169,
+  "negatives_per_positive": 20,
+  "rule": "20 if P>=2000; 50 if 1000<=P<2000; stop if P<1000 (brief \u00a72, fixed before any result)"
+ }
+}

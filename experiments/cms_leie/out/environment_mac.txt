@@ -1,0 +1,9 @@
+python 3.11.7
+scikit-learn 1.8.0
+imbalanced-learn 0.14.2
+numpy 2.4.4
+pandas 3.0.2
+pyarrow 25.0.1
+scipy 1.17.1
+BLAS/LAPACK Apple Accelerate (numpy wheel)
+CPUs 10, RAM 32 GB, arm64, macOS 26.5.1 (Mac verification run, 3-4 Oct 2026)

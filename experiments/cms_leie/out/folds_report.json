@@ -1,0 +1,58 @@
+{
+ "ratio": 20,
+ "rows": 13527801,
+ "positives": 11169,
+ "providers": 1923606,
+ "folds": {
+  "1": {
+   "test_rows": 2705561,
+   "test_positives": 2234,
+   "test_providers": 384721,
+   "train_pool_rows": 10822240,
+   "train_pool_positives": 8935,
+   "train_sampled_rows": 187635,
+   "train_sampled_negatives": 178700,
+   "train_providers": 168575
+  },
+  "2": {
+   "test_rows": 2705560,
+   "test_positives": 2234,
+   "test_providers": 384721,
+   "train_pool_rows": 10822241,
+   "train_pool_positives": 8935,
+   "train_sampled_rows": 187635,
+   "train_sampled_negatives": 178700,
+   "train_providers": 168514
+  },
+  "3": {
+   "test_rows": 2705560,
+   "test_positives": 2234,
+   "test_providers": 384721,
+   "train_pool_rows": 10822241,
+   "train_pool_positives": 8935,
+   "train_sampled_rows": 187635,
+   "train_sampled_negatives": 178700,
+   "train_providers": 168509
+  },
+  "4": {
+   "test_rows": 2705560,
+   "test_positives": 2233,
+   "test_providers": 384721,
+   "train_pool_rows": 10822241,
+   "train_pool_positives": 8936,
+   "train_sampled_rows": 187656,
+   "train_sampled_negatives": 178720,
+   "train_providers": 168613
+  },
+  "5": {
+   "test_rows": 2705560,
+   "test_positives": 2234,
+   "test_providers": 384722,
+   "train_pool_rows": 10822241,
+   "train_pool_positives": 8935,
+   "train_sampled_rows": 187635,
+   "train_sampled_negatives": 178700,
+   "train_providers": 168480
+  }
+ }
+}

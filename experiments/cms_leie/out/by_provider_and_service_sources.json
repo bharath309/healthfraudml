@@ -1,0 +1,86 @@
+[
+ {
+  "year": 2013,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2013-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/bf4231f9-ec7f-4189-afc3-ba5d53b8bd12/MUP_PHY_R25_P04_V20_D13_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data-viewer"
+ },
+ {
+  "year": 2014,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2014-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/6700f86d-d2e5-4f2d-9dcb-8c30412768ff/MUP_PHY_R25_P04_V20_D14_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data-viewer"
+ },
+ {
+  "year": 2015,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2015-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/14954ce3-4c43-43df-97e9-2c0437d7b43c/MUP_PHY_R25_P04_V20_D15_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data-viewer"
+ },
+ {
+  "year": 2016,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2016-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/426bf97a-4cb8-47ca-9727-a535d9e8c298/MUP_PHY_R25_P04_V20_D16_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data-viewer"
+ },
+ {
+  "year": 2017,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2017-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/4623fb40-781e-4eef-860e-b851cd5d10ea/MUP_PHY_R25_P04_V20_D17_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data-viewer"
+ },
+ {
+  "year": 2018,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2018-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/5669eafb-f0b3-4dc5-be6d-abc09b480c2e/MUP_PHY_R25_P04_V20_D18_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data-viewer"
+ },
+ {
+  "year": 2019,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2019-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/7befba27-752e-47a8-a76c-6c6d4f74f2e3/MUP_PHY_R25_P04_V20_D19_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data-viewer"
+ },
+ {
+  "year": 2020,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2020-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/d22b18cd-7726-4bf5-8e9c-3e4587c589a1/MUP_PHY_R25_P05_V20_D20_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data-viewer"
+ },
+ {
+  "year": 2021,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2021-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/bffaf97a-c2ab-4fd7-8718-be90742e3485/MUP_PHY_R25_P05_V20_D21_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data-viewer"
+ },
+ {
+  "year": 2022,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2022-12-02",
+  "modified": "2025-03-26",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-11/53fb2bae-4913-48dc-a6d4-d8c025906567/MUP_PHY_R25_P05_V20_D22_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data-viewer"
+ },
+ {
+  "year": 2023,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2023-12-31",
+  "modified": "2025-10-28",
+  "csv_url": "https://data.cms.gov/sites/default/files/2025-04/e3f823f8-db5b-4cc7-ba04-e7ae92b99757/MUP_PHY_R25_P05_V20_D23_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data-viewer"
+ },
+ {
+  "year": 2024,
+  "title": "Medicare Physician & Other Practitioners - by Provider and Service : 2024-12-01",
+  "modified": "2026-05-21",
+  "csv_url": "https://data.cms.gov/sites/default/files/2026-05/b5ebab5a-f490-418a-9bce-4b9f31419356/PHY_R26_P05_V10_D24_Prov_Svc.csv",
+  "api": "https://data.cms.gov/data-api/v1/dataset/92396110-2aed-4d63-a6a2-5d6207d46a29/data-viewer"
+ }
+]
