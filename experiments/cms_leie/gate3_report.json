@@ -1,0 +1,347 @@
+{
+ "folds": {
+  "providers_in_more_than_one_fold": 0,
+  "rows_per_fold": {
+   "1": 2705561,
+   "2": 2705560,
+   "3": 2705560,
+   "4": 2705560,
+   "5": 2705560
+  }
+ },
+ "runs": {
+  "primary_is_fraud": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "mlp": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "nb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "svm": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "ens": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  },
+  "primary_is_fraud_mandatory": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  },
+  "primary_is_fraud_5yr": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  },
+  "sensitivity_cc_2017plus_is_fraud": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  },
+  "primary_plus_year_is_fraud": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  },
+  "primary_is_fraud_r50": {
+   "gb": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   },
+   "rf": {
+    "recompute_max_abs_diff": 0.0,
+    "summary_max_abs_diff": 0.0
+   }
+  }
+ },
+ "threshold": {
+  "primary_is_fraud": {
+   "max_identity_abs_diff": 6.938893903907228e-18,
+   "grid_optimum": 0.89,
+   "grid_optimum_f1": 0.044256363871301205,
+   "nested_f1_mean": 0.044474571363056284,
+   "summary_grid_optimum": 0.89,
+   "summary_nested_f1_mean": 0.044474571363056284
+  },
+  "primary_is_fraud_mandatory": {
+   "max_identity_abs_diff": 1.3877787807814457e-17,
+   "grid_optimum": 0.9,
+   "grid_optimum_f1": 0.05309297444128905,
+   "nested_f1_mean": 0.05048497061515209,
+   "summary_grid_optimum": 0.9,
+   "summary_nested_f1_mean": 0.05048497061515209
+  },
+  "primary_is_fraud_5yr": {
+   "max_identity_abs_diff": 1.734723475976807e-18,
+   "grid_optimum": 0.63,
+   "grid_optimum_f1": 0.014785751161590088,
+   "nested_f1_mean": 0.013838000477878925,
+   "summary_grid_optimum": 0.63,
+   "summary_nested_f1_mean": 0.013838000477878925
+  },
+  "sensitivity_cc_2017plus_is_fraud": {
+   "max_identity_abs_diff": 1.3877787807814457e-17,
+   "grid_optimum": 0.79,
+   "grid_optimum_f1": 0.031952965235173825,
+   "nested_f1_mean": 0.029770739163616507,
+   "summary_grid_optimum": 0.79,
+   "summary_nested_f1_mean": 0.029770739163616507
+  },
+  "primary_plus_year_is_fraud": {
+   "max_identity_abs_diff": 2.7755575615628914e-17,
+   "grid_optimum": 0.86,
+   "grid_optimum_f1": 0.05097128236205098,
+   "nested_f1_mean": 0.05123487353069909,
+   "summary_grid_optimum": 0.86,
+   "summary_nested_f1_mean": 0.05123487353069909
+  },
+  "primary_is_fraud_r50": {
+   "max_identity_abs_diff": 1.3877787807814457e-17,
+   "grid_optimum": 0.8,
+   "grid_optimum_f1": 0.04094126650086091,
+   "nested_f1_mean": 0.03875341888973034,
+   "summary_grid_optimum": 0.8,
+   "summary_nested_f1_mean": 0.03875341888973034
+  }
+ },
+ "ranks": {
+  "f1_synthetic": {
+   "paper_order": [
+    "Gradient Boosting",
+    "Neural Network (MLP)",
+    "Random Forest",
+    "AdaBoost-Voting Ensemble",
+    "SVM (RBF)",
+    "Naive Bayes"
+   ],
+   "kendall_tau": 0.7333333333333333,
+   "kendall_p": 0.05555555555555555,
+   "spearman_rho": 0.8285714285714287,
+   "top2_identical": false,
+   "rule_met": false
+  },
+  "f1_kaggle_medicare": {
+   "paper_order": [
+    "Gradient Boosting",
+    "Neural Network (MLP)",
+    "Random Forest",
+    "AdaBoost-Voting Ensemble",
+    "SVM (RBF)",
+    "Naive Bayes"
+   ],
+   "kendall_tau": 0.7333333333333333,
+   "kendall_p": 0.05555555555555555,
+   "spearman_rho": 0.8285714285714287,
+   "top2_identical": false,
+   "rule_met": false
+  },
+  "cms_order_f1": [
+   "Gradient Boosting",
+   "Random Forest",
+   "AdaBoost-Voting Ensemble",
+   "Neural Network (MLP)",
+   "SVM (RBF)",
+   "Naive Bayes"
+  ],
+  "auc_pr_synthetic": {
+   "paper_order": [
+    "Gradient Boosting",
+    "Random Forest",
+    "AdaBoost-Voting Ensemble",
+    "Neural Network (MLP)",
+    "SVM (RBF)",
+    "Naive Bayes"
+   ],
+   "kendall_tau": 0.8666666666666666,
+   "kendall_p": 0.016666666666666666,
+   "spearman_rho": 0.942857142857143,
+   "top2_identical": true,
+   "rule_met": 1.0
+  },
+  "auc_pr_kaggle_medicare": {
+   "paper_order": [
+    "Neural Network (MLP)",
+    "Random Forest",
+    "Gradient Boosting",
+    "AdaBoost-Voting Ensemble",
+    "SVM (RBF)",
+    "Naive Bayes"
+   ],
+   "kendall_tau": 0.3333333333333333,
+   "kendall_p": 0.46944444444444444,
+   "spearman_rho": 0.5428571428571429,
+   "top2_identical": false,
+   "rule_met": false
+  },
+  "cms_order_auc_pr": [
+   "Gradient Boosting",
+   "Random Forest",
+   "AdaBoost-Voting Ensemble",
+   "Neural Network (MLP)",
+   "Naive Bayes",
+   "SVM (RBF)"
+  ]
+ },
+ "sens": {
+  "primary_is_fraud": {
+   "folds": 5,
+   "train_rows": 938196,
+   "train_pos": 44676,
+   "neg_per_pos": 20.0,
+   "test_prevalence": 0.0008256330796113869
+  },
+  "primary_is_fraud_mandatory": {
+   "folds": 5,
+   "train_rows": 938196,
+   "train_pos": 25444,
+   "neg_per_pos": 35.87297594717812,
+   "test_prevalence": 0.0004702168519480735
+  },
+  "primary_is_fraud_5yr": {
+   "folds": 5,
+   "train_rows": 938196,
+   "train_pos": 19424,
+   "neg_per_pos": 47.30086490939045,
+   "test_prevalence": 0.00035896447619239815
+  },
+  "sensitivity_cc_2017plus_is_fraud": {
+   "folds": 5,
+   "train_rows": 648802,
+   "train_pos": 20040,
+   "neg_per_pos": 31.375349301397204,
+   "test_prevalence": 0.0005267106426248315
+  },
+  "primary_plus_year_is_fraud": {
+   "folds": 5,
+   "train_rows": 938196,
+   "train_pos": 44676,
+   "neg_per_pos": 20.0,
+   "test_prevalence": 0.0008256330796113869
+  },
+  "primary_is_fraud_r50": {
+   "folds": 5,
+   "train_rows": 2278476,
+   "train_pos": 44676,
+   "neg_per_pos": 50.0,
+   "test_prevalence": 0.0008256330796113869
+  }
+ },
+ "cc": {
+  "2017": {
+   "rows": 1088687,
+   "any_blank": 0.933009212014105,
+   "all_blank": 3.490443075006866e-05,
+   "median_blank": 6.0,
+   "benes_lt11": 0.0
+  },
+  "2018": {
+   "rows": 1121462,
+   "any_blank": 0.9309258806807542,
+   "all_blank": 3.388434026297815e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2019": {
+   "rows": 1155870,
+   "any_blank": 0.9314663413705694,
+   "all_blank": 4.498775813889105e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2020": {
+   "rows": 1161542,
+   "any_blank": 0.9452529482360518,
+   "all_blank": 6.71521133114429e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2021": {
+   "rows": 1198754,
+   "any_blank": 0.9455042485781069,
+   "all_blank": 5.589136720294573e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2022": {
+   "rows": 1230293,
+   "any_blank": 0.9503427232374727,
+   "all_blank": 5.364575755531406e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2023": {
+   "rows": 1259343,
+   "any_blank": 0.9522433522876611,
+   "all_blank": 6.193705765625409e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  },
+  "2024": {
+   "rows": 1296739,
+   "any_blank": 0.953367639902864,
+   "all_blank": 6.863370346692743e-05,
+   "median_blank": 7.0,
+   "benes_lt11": 0.0
+  }
+ },
+ "cc_field_blank_share": {
+  "Bene_CC_BH_PTSD_V1_Pct": 0.6603,
+  "Bene_CC_BH_ADHD_OthCD_V1_Pct": 0.6539,
+  "Bene_CC_BH_PD_V1_Pct": 0.6465,
+  "Bene_CC_PH_Parkinson_V2_Pct": 0.6046,
+  "Bene_CC_BH_Schizo_OthPsy_V1_Pct": 0.5704,
+  "Bene_CC_BH_Bipolar_V1_Pct": 0.538,
+  "Bene_CC_BH_Alcohol_Drug_V1_Pct": 0.4431,
+  "Bene_CC_BH_Alz_NonAlzdem_V2_Pct": 0.4067,
+  "Bene_CC_PH_Stroke_TIA_V2_Pct": 0.3855,
+  "Bene_CC_BH_Tobacco_V1_Pct": 0.3541,
+  "Bene_CC_PH_Asthma_V2_Pct": 0.3438,
+  "Bene_CC_PH_Osteoporosis_V2_Pct": 0.304,
+  "Bene_CC_PH_Cancer6_V2_Pct": 0.2867,
+  "Bene_CC_PH_HF_NonIHD_V2_Pct": 0.2783,
+  "Bene_CC_PH_Afib_V2_Pct": 0.2648,
+  "Bene_CC_PH_COPD_V2_Pct": 0.2588,
+  "Bene_CC_PH_CKD_V2_Pct": 0.2174,
+  "Bene_CC_PH_IschemicHeart_V2_Pct": 0.1938,
+  "Bene_CC_BH_Depress_V1_Pct": 0.1763,
+  "Bene_CC_BH_Anxiety_V1_Pct": 0.1641,
+  "Bene_CC_PH_Diabetes_V2_Pct": 0.155,
+  "Bene_CC_BH_Mood_V2_Pct": 0.1519,
+  "Bene_CC_PH_Arthritis_V2_Pct": 0.0941,
+  "Bene_CC_PH_Hyperlipidemia_V2_Pct": 0.0497,
+  "Bene_CC_PH_Hypertension_V2_Pct": 0.0441
+ }
+}
