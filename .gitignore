@@ -58,3 +58,6 @@ experiments/cms_leie/logs/
 experiments/cms_leie/results/oof/
 experiments/cms_leie/**/*.parquet
 experiments/cms_leie/**/__pycache__/
+experiments/cms_leie/models/
+experiments/cms_leie/prospective/cy2024_*
+experiments/cms_leie/data/*_imp.parquet

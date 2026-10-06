@@ -1,0 +1,81 @@
+{
+ "fraud_rows": 11169,
+ "fraud_npis": 2131,
+ "as_of": {
+  "2015": {
+   "eventual_positive_rows_before_t": 3340,
+   "known_at_t": 152,
+   "share_known": 0.045508982035928146
+  },
+  "2016": {
+   "eventual_positive_rows_before_t": 4820,
+   "known_at_t": 358,
+   "share_known": 0.07427385892116183
+  },
+  "2017": {
+   "eventual_positive_rows_before_t": 6159,
+   "known_at_t": 803,
+   "share_known": 0.1303783081669102
+  },
+  "2018": {
+   "eventual_positive_rows_before_t": 7329,
+   "known_at_t": 1329,
+   "share_known": 0.18133442488743348
+  },
+  "2019": {
+   "eventual_positive_rows_before_t": 8332,
+   "known_at_t": 1948,
+   "share_known": 0.23379740758521364
+  },
+  "2020": {
+   "eventual_positive_rows_before_t": 9177,
+   "known_at_t": 2431,
+   "share_known": 0.2649013838945189
+  },
+  "2021": {
+   "eventual_positive_rows_before_t": 9860,
+   "known_at_t": 3043,
+   "share_known": 0.3086206896551724
+  },
+  "2022": {
+   "eventual_positive_rows_before_t": 10402,
+   "known_at_t": 3874,
+   "share_known": 0.37242837915785426
+  },
+  "2023": {
+   "eventual_positive_rows_before_t": 10786,
+   "known_at_t": 5271,
+   "share_known": 0.488689041349898
+  },
+  "2024": {
+   "eventual_positive_rows_before_t": 11029,
+   "known_at_t": 6816,
+   "share_known": 0.6180070722640312
+  },
+  "2025": {
+   "eventual_positive_rows_before_t": 11169,
+   "known_at_t": 8787,
+   "share_known": 0.7867311308084878
+  }
+ },
+ "years_to_exclusion": {
+  "1": 310,
+  "2": 808,
+  "3": 1151,
+  "4": 1303,
+  "5": 1284,
+  "6": 1208,
+  "7": 1104,
+  "8": 1048,
+  "9": 938,
+  "10": 785,
+  "11": 592,
+  "12": 396,
+  "13": 195,
+  "14": 47
+ },
+ "billing_years_before_exclusion": {
+  "median_first_observed_to_exclusion": 8.0,
+  "median_last_observed_to_exclusion": 3.0
+ }
+}

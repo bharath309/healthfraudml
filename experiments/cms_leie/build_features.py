@@ -7,10 +7,15 @@ sensitivity on 2017-2024 (+ cc_missing indicator). Blanks -> 0 with an indicator
 + risk_missing. Label encoders are fitted on the union of categories over all years (sorted, as sklearn's LabelEncoder).
 RobustScaler statistics (median, IQR; IQR 0 -> 1, as sklearn) are computed over ALL kept rows of all years and saved to
 out/scaler_stats.json; scaling is applied at load time. Outputs: data/feat_<year>.parquet, out/feature_list.json."""
-import os, json
+import os, json, argparse
 import numpy as np, pandas as pd, pyarrow as pa, pyarrow.parquet as pq
 HERE=os.path.dirname(os.path.abspath(__file__)); DATA=os.path.join(HERE,'data'); OUT=os.path.join(HERE,'out')
 YEARS=list(range(2013,2025))
+# --variant imp (added 5 Oct 2026, sixth sensitivity): suppressed demographic COUNT cells (blank = 1-10 beneficiaries) are
+# imputed with 5.5 (the midpoint) instead of 0, Bene_Avg_Age blank -> year median; everything else identical. Writes
+# data/feat_<year>_imp.parquet, out/scaler_stats_imp.json and adds the feature set 'primary_imp' to out/feature_list.json.
+ap=argparse.ArgumentParser(); ap.add_argument('--variant',default='none',choices=['none','imp']); VAR=ap.parse_args().variant
+SUF='' if VAR=='none' else '_imp'
 NUM=['Tot_HCPCS_Cds','Tot_Benes','Tot_Srvcs','Tot_Sbmtd_Chrg','Tot_Mdcr_Alowd_Amt','Tot_Mdcr_Pymt_Amt','Tot_Mdcr_Stdzd_Amt',
      'Drug_Tot_HCPCS_Cds','Drug_Tot_Benes','Drug_Tot_Srvcs','Drug_Sbmtd_Chrg','Drug_Mdcr_Alowd_Amt','Drug_Mdcr_Pymt_Amt','Drug_Mdcr_Stdzd_Amt',
      'Med_Tot_HCPCS_Cds','Med_Tot_Benes','Med_Tot_Srvcs','Med_Sbmtd_Chrg','Med_Mdcr_Alowd_Amt','Med_Mdcr_Pymt_Amt','Med_Mdcr_Stdzd_Amt',
@@ -37,6 +42,7 @@ json.dump({c:sorted(vocab[c]) for c in CAT},open(os.path.join(OUT,'category_voca
 def safe_div(a,b): return np.where(b>0,a/np.where(b>0,b,1),0.0)
 feats=NUM+DERIVED+IND+[c+'_code' for c in CAT]
 for y in YEARS:
+    if VAR=='imp' and os.path.exists(os.path.join(DATA,f'feat_{y}{SUF}.parquet')): print(y,'exists (resume)',flush=True); continue   # resumable variant build
     cols=['Rndrng_NPI']+NUM+['Drug_Sprsn_Ind','Med_Sprsn_Ind']+CAT+([c for c in CC] if y>=2017 else [])
     t=pq.read_table(os.path.join(DATA,f'by_provider_{y}.parquet'),columns=cols).to_pandas()
     lab=pd.read_parquet(os.path.join(DATA,f'labels_{y}.parquet'))
@@ -49,6 +55,10 @@ for y in YEARS:
     risk_missing=int(num['Bene_Avg_Risk_Scre'].isna().sum())
     med_risk=float(num['Bene_Avg_Risk_Scre'].median())
     num['Bene_Avg_Risk_Scre']=num['Bene_Avg_Risk_Scre'].fillna(med_risk)
+    if VAR=='imp':
+        cnt_cols=[c for c in BENE_CNT if c!='Bene_Avg_Age']; n_imp=int(num[cnt_cols].isna().sum().sum())
+        num[cnt_cols]=num[cnt_cols].fillna(5.5); num['Bene_Avg_Age']=num['Bene_Avg_Age'].fillna(float(num['Bene_Avg_Age'].median()))
+        print(y,'imputed',n_imp,'suppressed demographic count cells with 5.5',flush=True)
     num=num.fillna(0.0)
     for c in NUM: X[c]=num[c].astype('float32')
     X['srvcs_per_bene']=safe_div(num['Tot_Srvcs'],num['Tot_Benes']); X['chrg_per_srvc']=safe_div(num['Tot_Sbmtd_Chrg'],num['Tot_Srvcs'])
@@ -67,9 +77,12 @@ for y in YEARS:
         for c in CC: X[c]=np.float32(np.nan)
     X=X[feats+['cc_missing']+CC].astype('float32')
     out=pd.concat([t[['Rndrng_NPI','year','is_fraud','is_fraud_mandatory','is_fraud_5yr','drop_post_excl']].reset_index(drop=True),X.reset_index(drop=True)],axis=1)
-    out.to_parquet(os.path.join(DATA,f'feat_{y}.parquet'),index=False)
+    out.to_parquet(os.path.join(DATA,f'feat_{y}{SUF}.parquet'),index=False)
     print(y,len(out),'rows',len(feats),'primary features; risk median',round(med_risk,3),'| block suppressed',int(X['block_suppressed'].sum()),'| mean demo cells missing',round(float(X['bene_demo_n_missing'].mean()),2),'| risk missing',risk_missing,flush=True)
-json.dump({'primary':feats,'sensitivity_cc_2017plus':feats+['cc_missing']+CC,'numeric_published':NUM,'derived':DERIVED,'indicators':IND,'categorical_label_encoded':CAT},open(os.path.join(OUT,'feature_list.json'),'w'),indent=1)
+if VAR=='none':
+    json.dump({'primary':feats,'sensitivity_cc_2017plus':feats+['cc_missing']+CC,'numeric_published':NUM,'derived':DERIVED,'indicators':IND,'categorical_label_encoded':CAT},open(os.path.join(OUT,'feature_list.json'),'w'),indent=1)
+else:   # add the variant's feature set (same names) without touching the frozen entries
+    fl=json.load(open(os.path.join(OUT,'feature_list.json'))); assert fl['primary']==feats; fl['primary_imp']=feats; json.dump(fl,open(os.path.join(OUT,'feature_list.json'),'w'),indent=1)
 # RobustScaler statistics over all kept rows, all years (primary + CC columns; CC over 2017+ only)
 stats={}
 allcols=feats+CC
@@ -77,9 +90,9 @@ for c in allcols:
     vals=[]
     for y in YEARS:
         if c in CC and y<2017: continue
-        v=pq.read_table(os.path.join(DATA,f'feat_{y}.parquet'),columns=[c,'drop_post_excl']).to_pandas()
+        v=pq.read_table(os.path.join(DATA,f'feat_{y}{SUF}.parquet'),columns=[c,'drop_post_excl']).to_pandas()
         vals.append(v.loc[v['drop_post_excl']==0,c].to_numpy(dtype='float64'))
     v=np.concatenate(vals); q25,med,q75=np.percentile(v,[25,50,75]); iqr=q75-q25
     stats[c]={'median':float(med),'iqr':float(iqr if iqr>0 else 1.0),'q25':float(q25),'q75':float(q75),'n':int(len(v))}
-json.dump(stats,open(os.path.join(OUT,'scaler_stats.json'),'w'),indent=1)
+json.dump(stats,open(os.path.join(OUT,f'scaler_stats{SUF}.json'),'w'),indent=1)
 print('scaler stats written for',len(stats),'columns')

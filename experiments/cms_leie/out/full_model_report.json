@@ -1,0 +1,45 @@
+{
+ "model": "full_gb",
+ "rows_all": 13527801,
+ "positives_all": 11169,
+ "sampled_rows": 234549,
+ "sampled_pos": 11169,
+ "sampled_neg": 223380,
+ "resampled_rows": 388599,
+ "resampled_pos": 216406,
+ "n_estimators": 500,
+ "hyper_parameters": {
+  "max_depth": 6,
+  "learning_rate": 0.05,
+  "subsample": 0.8,
+  "random_state": 42
+ },
+ "fit_seconds": 9527.4,
+ "increments": [
+  503.7,
+  520.8,
+  525.3,
+  532.6,
+  529.6,
+  536.6,
+  529.1,
+  566.3,
+  718.4,
+  597.0,
+  592.1,
+  593.2,
+  594.8,
+  594.6,
+  594.7,
+  600.0,
+  398.6
+ ],
+ "resample_seconds": 107.3,
+ "model_sha256": "dafe3b901091a3c87df0b9d0acbe40d9be1351fab7597002b7448512b611182a",
+ "versions": {
+  "sklearn": "1.8.0",
+  "imblearn": "0.14.2",
+  "numpy": "2.4.4"
+ },
+ "finished_utc": "2026-10-06T02:56:52Z"
+}
