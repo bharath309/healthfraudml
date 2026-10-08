@@ -101,3 +101,6 @@ pre-specified decision rules in §7. Exclusion is the label; the model refers; p
 (scaler statistics on ≤ t − 1; sampling; SMOTE-ENN; cache) → `asof_train.py t variant model` (resumable warm-start; scores
 year t) → `asof_metrics.py` (all of §5–§7; `results/asof/summary.json` and `summary.md`) → gate check against this file
 before anything is reported.
+
+## Deviations (appended after the freeze commit 8cadcb87f602fc92e877976262351d31b16967e1 of 8 Oct 2026 05:18 UTC; the frozen text is the file content up to, not including, the blank line before this heading — sha256 4bdbad3d02d1e41331b062a93d645d441345f6693ea8237e101b03f8f804c061, as in PROTOCOL_HASH.txt)
+- 2026-10-08 05:20 UTC — §8 "Primary run on the Mac (Claude Code); replication in the cloud": the primary run is executed in the Cowork cloud workspace (the arm's data and out-of-fold results are byte-identical there, `results/mac_vs_cloud_v32_diffs.md`), because Bharath delegated execution to the Cowork session on 8 Oct 2026; the Mac run becomes the replication. Reason: availability of compute without Bharath's attendance. No other section changes.
