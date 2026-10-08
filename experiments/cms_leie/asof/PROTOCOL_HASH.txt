@@ -1,0 +1,10 @@
+Protocol T freeze — 2026-10-08T05:17:57Z
+protocol_T_frozen.md sha256 4bdbad3d02d1e41331b062a93d645d441345f6693ea8237e101b03f8f804c061
+committed from the Cowork session (Bharath delegated execution, 8 Oct 2026); no model under Protocol T was trained before this commit
+
+a16ddf62fb07ca8be747d388ac82c54d23d6426a632d551aefa334cd5a902513  asof_common.py
+55130d5e456e709362c69ecce511a451df6c879bfcff8ec51ea141a920d7386a  asof_labels.py
+de1350b3121376071e859cbf08cf2334eefb22aafd240e775e567f328b009515  asof_build.py
+ae33cb920967f42541d6758dc11549a5b5517572a9e4580a6e34e2a5db3a383b  asof_train.py
+f143ddefb6cbc60dc7ef6d7a1f7dceabfde96b45a66addbe9c049c997854b11d  asof_metrics.py
+0711df8354a2a7a1b051b749c2daefeb6168f5d22a089215614a439a50d33683  asof_smoke.py
