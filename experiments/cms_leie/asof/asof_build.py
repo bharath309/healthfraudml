@@ -25,8 +25,14 @@ def robust_stats(df,cols):
     q=df[cols].quantile([0.25,0.5,0.75]); med=q.loc[0.5]; iqr=(q.loc[0.75]-q.loc[0.25]).replace(0,1.0); return med.astype('float64'),iqr.astype('float64')
 years_tr=sorted(tr['year'].unique().tolist())
 if V=='A':
-    parts=[year_rows(y,FEATS)[FEATS] for y in years_tr]; allf=pd.concat(parts,ignore_index=True); del parts
-    med,iqr=robust_stats(allf,FEATS); del allf
+    # column-wise quantiles over all kept rows with year <= t-1 (one feature column at a time across the years; numerically the
+    # same pandas quantile([0.25,0.5,0.75]) of the concatenated rows as the first implementation, without holding all years in memory)
+    import pyarrow.parquet as _pq
+    med={}; iqr={}
+    for c in FEATS:
+        col=pd.concat([_pq.read_table(os.path.join(DATA,f'feat_{y}.parquet'),columns=[c]).to_pandas()[c] for y in years_tr],ignore_index=True)
+        q=col.quantile([0.25,0.5,0.75]); m=float(q.loc[0.5]); i=float(q.loc[0.75]-q.loc[0.25]); iqr[c]=1.0 if i==0 else i; med[c]=m; del col
+    med=pd.Series(med)[FEATS].astype('float64'); iqr=pd.Series(iqr)[FEATS].astype('float64')
     stats={c:{'median':float(med[c]),'iqr':float(iqr[c])} for c in FEATS}
     def scale(df): return ((df[FEATS].astype('float64')-med.values)/iqr.values).to_numpy(dtype='float32')
 else:

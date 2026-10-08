@@ -1,0 +1,18 @@
+{
+ "t": 2019,
+ "variant": "A",
+ "model": "rf",
+ "n_estimators": 500,
+ "fit_seconds": 59.7,
+ "train_rows": 55499,
+ "train_positives": 30686,
+ "test_rows": 1155785,
+ "test_positives": 845,
+ "f1": 0.008106819265617548,
+ "precision": 0.004117219665778639,
+ "recall": 0.26153846153846155,
+ "auc_pr": 0.003913660240622497,
+ "auc_roc": 0.7423558558793956,
+ "protocol_sha256": "4bdbad3d02d1e41331b062a93d645d441345f6693ea8237e101b03f8f804c061",
+ "resampled_sha256": "ad276939fdd9734afe2cbec99fcce31c6a3d63ebfa53e8eb7af9b9365ecc8f76"
+}

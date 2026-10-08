@@ -1,0 +1,5 @@
+## Implementation notes appended after the freeze (cloud primary run, 8 Oct 2026; statistics unchanged)
+- 2026-10-08T09:00:25Z asof_build.py: variant-A scaler statistics computed column-wise across the training years instead of concatenating all years in memory (identical pandas quantiles; exact equality verified on a two-year check). sha256 c40235ddc362360fe8411b33709e73670a31cf5938bf7b96414a4e44aa5b65a4
+- asof_metrics.py: bootstrap weight vectors drawn one at a time from the same generator (default_rng(2026+t)) instead of a B x n matrix (~10 GB); T2 and T4 consume the same draw i; rank orders cached per score vector (the ranking is fixed across draws). sha256 6e6f586bdea1935e10576d71b715aeb6b1c5f07d236dc44ac53df427e7ed1015
+- run_protocol_T.sh (driver: labels -> builds -> fits, resumable). sha256 03e1b9222ef8cd9c602f432844a70ae35250c9bf911c6b40e6630c3fbb3e4574
+- Primary run completed 2026-10-08 05:22-08:34 UTC (fits) and 08:36-08:59 UTC (metrics, B = 1,000) in the Cowork cloud workspace; summary.json sha256 79ecba2efc1e7ece54b060b67f557447d7b239a5f64b54905792fcb00e3a530a; the Mac run is the replication (deviation block in protocol_T_frozen.md).

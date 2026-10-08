@@ -11,14 +11,22 @@ def topk_metrics(score,y,npi,pay,budgets):
     for k in budgets:
         m=int(np.floor(k*n)); tp=int(ys[:m].sum()); out[str(k)]={'rows':m,'tp':tp,'recall':tp/P,'precision':tp/m,'lift':(tp/m)/prev,'dollar_recall':float(ps[:m][ys[:m]==1].sum()/D),'distinct_npis':int(len(np.unique(npi[o][:m][ys[:m]==1])))}
     out['auc_pr']=float(average_precision_score(y,score)); out['auc_roc']=float(roc_auc_score(y,score)); out['prevalence']=float(prev); out['n']=int(n); out['positives']=int(P); return out
+_ORD={}
+def cached_order(score,npi):
+    """rank order of a score vector, cached on the buffer address (the ranking is fixed across bootstrap draws)."""
+    key=(score.ctypes.data,len(score),npi.ctypes.data)
+    if key not in _ORD:
+        if len(_ORD)>64: _ORD.clear()
+        _ORD[key]=rank_order(score,npi)
+    return _ORD[key]
 def recall_at(score,y,npi,k,w=None):
     """recall@k with optional bootstrap weights w (providers resampled with replacement): prefix of the fixed ranking until floor(k*sum w)."""
-    o=rank_order(score,npi); ys=y[o]
+    o=cached_order(score,npi); ys=y[o]
     if w is None: m=int(np.floor(k*len(y))); return ys[:m].sum()/ys.sum()
     ws=w[o]; cw=np.cumsum(ws); m=np.searchsorted(cw,np.floor(k*cw[-1]),side='right'); return float((ws[:m]*ys[:m]).sum()/(ws*ys).sum())
 def alloc_recall(S,P,k,w=None):
     """yield-aware allocation at budget k using year t-1 flags by the model built at t (P: prev-year frame with p, known_t, ptype)."""
-    kprev=int(np.floor(k*len(P))); o=rank_order(P['p'].values,P['npi'].values)[:kprev]; flagged=P.iloc[o]
+    kprev=int(np.floor(k*len(P))); o=cached_order(P['p'].values,P['npi'].values)[:kprev]; flagged=P.iloc[o]
     yl=flagged.groupby('ptype')['known'].agg(['sum','size']); pooled=flagged['known'].mean()
     yield_s={int(s):(r['sum']/r['size'] if r['size']>=50 else pooled) for s,r in yl.iterrows()}
     n=len(S); budget=int(np.floor(k*n)); types=S['ptype'].values; ns=pd.Series(types).value_counts()
@@ -26,16 +34,21 @@ def alloc_recall(S,P,k,w=None):
     y=S['is_fraud'].values; p=S['p'].values; npi=S['npi'].values; ww=np.ones(n) if w is None else w
     if tot<=0: return recall_at(p,y,npi,k,w)      # degenerate case (every yield estimate 0): the allocation is the global ranking (protocol §6)
     sel=np.zeros(n,dtype=bool); used=0
+    _TO=_ORD.setdefault(('types',p.ctypes.data,len(p)),{})
+    def _type_order(p,npi,idx):
+        key=int(types[idx[0]])
+        if key not in _TO: _TO[key]=idx[rank_order(p[idx],npi[idx])]
+        return _TO[key]
     for s,wt in weight.items():
         bs=int(np.floor(budget*wt/tot)); idx=np.where(types==s)[0]
         if bs==0 or len(idx)==0: continue
-        o=idx[rank_order(p[idx],npi[idx])]
+        o=_type_order(p,npi,idx)
         if w is None: take=o[:min(bs,len(o))]
         else: cw=np.cumsum(ww[o]); take=o[:np.searchsorted(cw,min(bs,cw[-1]),side='right')]
         sel[take]=True; used+=len(take)
     rest=budget-used
     if rest>0:   # unused budget returns to the global ranking
-        o=rank_order(p,npi); o=o[~sel[o]]
+        o=cached_order(p,npi); o=o[~sel[o]]
         if w is None: sel[o[:rest]]=True
         else: cw=np.cumsum(ww[o]); sel[o[:np.searchsorted(cw,rest,side='right')]]=True
     return float((ww*y*sel).sum()/(ww*y).sum())
@@ -61,16 +74,30 @@ for t in T_YEARS:
             Y['triage_1pct'][name]=topk_metrics(sc,y,npi,pay,[0.01])['0.01']
         diffs['T3'].append(Y['triage_1pct']['p_x_payment']['dollar_recall']-Y['triage_1pct']['p']['dollar_recall'])
     # T2 paired difference and bootstrap (providers = rows within year t)
-    rng=np.random.default_rng(2026+t); W=rng.multinomial(len(y),np.full(len(y),1/len(y)),size=B).astype('float64') if B>0 else None
+    rng=np.random.default_rng(2026+t); _pn=np.full(len(y),1/len(y))
+    class _W:   # draws generated lazily, one multinomial weight vector per index, in index order (memory ~10 MB instead of B x n)
+        def __init__(self): self.i=-1; self.w=None
+        def __getitem__(self,i):
+            assert i==self.i+1, 'draws must be consumed in order'
+            self.i=i; self.w=rng.multinomial(len(y),_pn).astype('float64'); return self.w
+    W=_W() if B>0 else None
     if 'p_gb_A' in S and 'p_gb_B' in S:
         a=S['p_gb_A'].values.astype('float64'); b=S['p_gb_B'].values.astype('float64'); d=recall_at(b,y,npi,0.01)-recall_at(a,y,npi,0.01); diffs['T2'].append(d)
-        for i in range(B): boot['T2'][i]+=(recall_at(b,y,npi,0.01,W[i])-recall_at(a,y,npi,0.01,W[i]))/len(T_YEARS)
+        _T2=(a,b)
     # T4 allocation vs global (GB-A), needs prev-year scores by the model built at t
     pp=os.path.join(RES,f'scores_prev_{t}.parquet')
     if 'p_gb_A' in S and os.path.exists(pp):
         P=pd.read_parquet(pp).rename(columns={'p_gb_A':'p'}); P=P.merge(K[K['year']==t-1][['npi',f'known_{t}']].rename(columns={f'known_{t}':'known'}),on='npi',how='left').fillna({'known':0})
         Sg=S.rename(columns={'p_gb_A':'p'}); g=recall_at(Sg['p'].values.astype('float64'),y,npi,0.01); al=alloc_recall(Sg,P,0.01); Y['allocation_1pct']={'global_recall':g,'yield_aware_recall':al}; diffs['T4'].append(al-g)
-        for i in range(B): boot['T4'][i]+=(alloc_recall(Sg,P,0.01,W[i])-recall_at(Sg['p'].values.astype('float64'),y,npi,0.01,W[i]))/len(T_YEARS)
+        _T4=(Sg,P,Sg['p'].values.astype('float64'))
+    if B>0 and ('_T2' in dir() or '_T4' in dir()):
+        for i in range(B):
+            w=W[i]
+            if '_T2' in dir(): boot['T2'][i]+=(recall_at(_T2[1],y,npi,0.01,w)-recall_at(_T2[0],y,npi,0.01,w))/len(T_YEARS)
+            if '_T4' in dir(): boot['T4'][i]+=(alloc_recall(_T4[0],_T4[1],0.01,w)-recall_at(_T4[2],y,npi,0.01,w))/len(T_YEARS)
+            if i%100==99: print(f'  bootstrap {i+1}/{B}',flush=True)
+        if '_T2' in dir(): del _T2
+        if '_T4' in dir(): del _T4
     summary['years'][str(t)]=Y; print('year',t,'done',flush=True)
 def ci(a): return [float(np.percentile(a,2.5)),float(np.percentile(a,97.5))]
 R={}

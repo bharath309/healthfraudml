@@ -1,0 +1,54 @@
+{
+ "leie_file": "LEIE_UPDATED.csv",
+ "leie_sha256": "175352046e438bc477fe0f8985c645c3eb492114b449e13a5700b30e00d27417",
+ "rows_kept": 13527801,
+ "positives": 11169,
+ "npis_with_end_date": 7231,
+ "excl_year_mismatches_vs_arm": 0,
+ "2018": {
+  "train_rows": 5104531,
+  "train_eventual_positives": 7329,
+  "train_known_positives": 1099,
+  "share_known": 0.14995224450811842,
+  "test_rows": 1121203,
+  "test_positives": 1003,
+  "test_positives_3yr": 139
+ },
+ "2019": {
+  "train_rows": 6225734,
+  "train_eventual_positives": 8332,
+  "train_known_positives": 1602,
+  "share_known": 0.19227076332213155,
+  "test_rows": 1155785,
+  "test_positives": 845,
+  "test_positives_3yr": 138
+ },
+ "2020": {
+  "train_rows": 7381519,
+  "train_eventual_positives": 9177,
+  "train_known_positives": 2158,
+  "share_known": 0.2351531001416585,
+  "test_rows": 1161465,
+  "test_positives": 683,
+  "test_positives_3yr": 158
+ },
+ "2021": {
+  "train_rows": 8542984,
+  "train_eventual_positives": 9860,
+  "train_known_positives": 2759,
+  "share_known": 0.27981744421906696,
+  "test_rows": 1198684,
+  "test_positives": 542,
+  "test_positives_3yr": 179
+ },
+ "2022": {
+  "train_rows": 9741668,
+  "train_eventual_positives": 10402,
+  "train_known_positives": 3345,
+  "share_known": 0.3215727744664488,
+  "test_rows": 1230215,
+  "test_positives": 384,
+  "test_positives_3yr": 199
+ },
+ "asof_known_sha256": "271c373fe840bab46ac647163bfe1dad3fab25203ca4adef69a81e6e096108cc"
+}
